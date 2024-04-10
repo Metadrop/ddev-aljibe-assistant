@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#ddev-generated
+
+## Description: Create symlinks to the scripts provided by Scripthor.
+## Usage: aljibe-create-symlinks
+## Example: "ddev aljibe-create-symlinks"
+
+#!/bin/bash
+
+# Constants
+DIR="./scripts"
+TARGET_DIR="../vendor/metadrop/scripthor/bin/"
+SIMLINK_FILES=("frontend-build.sh" "copy-content-config-entity-to-module.sh" "reload-local.sh" "setup-traefik-port.sh" "backup.sh")
+
+# Create symlinks
+createSymlinks() {
+  if createScriptDir; then
+    createScriptLink
+  else
+    echo "./scripts directory not created." > `tty`
+    exit 1
+  fi
+}
+
+# Create script directory
+createScriptDir() {
+  if [ ! -d $DIR ]; then
+    echo "./scripts directory created with 755 permissions." > `tty`
+    mkdir $DIR
+    chmod 755 $DIR
+  fi
+
+  if [ -d $DIR ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Create script symbolic links
+createScriptLink() {
+  for FILE in "${SIMLINK_FILES[@]}"; do
+    SCRIPT="$DIR/$FILE"
+    if [ ! -f $SCRIPT ]; then
+      ln -s $TARGET_DIR$FILE $SCRIPT
+      echo "Script created: $FILE" > `tty`
+    fi
+  done
+}
+
+echo "Creating symlinks..." > `tty`
+createSymlinks

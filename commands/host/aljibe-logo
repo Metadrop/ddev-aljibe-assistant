@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#ddev-generated
+
+## Description: Show Aljibe logo.
+## Usage: aljibe-logo
+## Example: "ddev aljibe-logo"
+
+
+#!/bin/bash
+
+# ANSI color codes
+brown='\033[0;33m'
+NC='\033[0m' # No Color
+
+# ASCII art with brown color
+echo ""
+echo ""
+echo -e "${brown} ___  ___     _            _                        ___  _ _ _ _          "
+echo " |  \\/  |    | |          | |                      / _ \\| (_|_) |         "
+echo " | .  . | ___| |_ __ _  __| |_ __ ___  _ __ ______/ /_\\ \\ |_ _| |__   ___ "
+echo " | |\\/| |/ _ \\ __/ _\` |/ _\` | '__/ _ \\| '_ \\______|  _  | | | | '_ \\ / _ \\"
+echo " | |  | |  __/ || (_| | (_| | | | (_) | |_) |     | | | | | | | |_) |  __/"
+echo " \\_|  |_/\___|\\__\\__,_|\\__,_|_|  \\___/| .__/      \\_| |_/\\|_|_|_.__/ \\___|"
+echo "                                      | |                _/ |             "
+echo "                                      |_|               |__/              "
+echo -e "${NC}" # Reset color
+echo ""

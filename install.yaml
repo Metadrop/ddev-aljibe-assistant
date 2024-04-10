@@ -1,0 +1,10 @@
+name: ddev-aljibe-assistant
+
+project_files:
+  - commands/host/aljibe-assistant
+  - commands/host/aljibe-create-project
+  - commands/host/aljibe-create-symlinks
+  - commands/host/aljibe-logo
+
+# dependencies:
+#   - Metadrop/ddev-aljibe
