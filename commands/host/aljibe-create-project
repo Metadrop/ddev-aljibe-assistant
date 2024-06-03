@@ -154,7 +154,7 @@ echo ""
 setConfFiles
 setUpGit
 initDdev
-#initGrumpPhp
 installDrupal
 createDirectories
 createSubTheme
+initGrumpPhp
