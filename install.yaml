@@ -1,11 +1,7 @@
 name: aljibe-assistant
 
 project_files:
-  - commands/host/aljibe-assistant
-  - commands/host/aljibe-create-project
-  - commands/host/aljibe-create-symlinks
-  - commands/host/aljibe-logo
+  - commands
 
-# This must be uncomment when aljibe is published
-# dependencies:
-#   - Metadrop/ddev-aljibe
+dependencies:
+  - Metadrop/ddev-aljibe

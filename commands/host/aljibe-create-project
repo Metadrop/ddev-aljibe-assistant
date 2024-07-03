@@ -9,7 +9,7 @@
 
 # Constants
 DRUSH_ALIASES_FOLDER="./drush/sites"
-DRUSH_ALIASES_FILE_SUFFIX=".site.yml"
+
 CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 GREEN='\033[0;32m'
@@ -43,17 +43,18 @@ setConfFiles() {
   PROJECT_NAME=$PROJECT_NAME_INPUT
 
   echo "Configuring ddev project $PROJECT_NAME"
-  ddev config --project-type=drupal10 --project-name $PROJECT_NAME --docroot 'web' --auto
+  ddev config --project-type=drupal --project-name $PROJECT_NAME --docroot 'web' --auto
+
+  echo "Preparing Aljibe config file"
+  cp ${DDEV_APPROOT}/.ddev/aljibe.yaml.example ${DDEV_APPROOT}/.ddev/aljibe.yaml
+  sed -i "s/default_site\: self/default_site\: $PROJECT_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
+
+  echo "Copying Aljibe Kickstart project files"
+  ddev aljibe-kickstart --yes
 
   echo "Setting up Drush aliases file"
-  DRUSH_SITE_ALIASES="$DRUSH_ALIASES_FOLDER/sitename$DRUSH_ALIASES_FILE_SUFFIX"
-  DRUSH_LOCAL_ALIAS="$DRUSH_ALIASES_FOLDER/default$DRUSH_ALIASES_FILE_SUFFIX"
-
-  cp "$DRUSH_SITE_ALIASES.example" "$DRUSH_SITE_ALIASES"
-  sed -i "s/sitename/$PROJECT_NAME/g" $DRUSH_SITE_ALIASES
-
-  cp "$DRUSH_LOCAL_ALIAS.example" "$DRUSH_LOCAL_ALIAS"
-  sed -i "s/sitename/$PROJECT_NAME/g" $DRUSH_LOCAL_ALIAS
+  cp "$DRUSH_ALIASES_FOLDER/sitename.site.yml.example" "$DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml"
+  sed -i "s/example/$PROJECT_NAME/g" $DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml
 
   echo "Setting up behat.yml file"
   sed -i "s/example/$PROJECT_NAME/g" ./behat.yml
@@ -140,7 +141,8 @@ createSubTheme() {
     ddev drush --include="web/themes/contrib/radix" radix:create $THEME_NAME
     ddev drush theme:enable $THEME_NAME -y
     ddev drush config-set system.theme default $THEME_NAME -y
-    ddev config --web-environment-add "THEME_PATH=/var/www/html/web/themes/custom/$THEME_NAME"
+    # Add theme to aljibe.yml
+    sed -i "s/custom_theme/$THEME_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
     ddev restart
     ddev frontend dev
   fi
