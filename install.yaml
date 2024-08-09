@@ -3,5 +3,4 @@ name: aljibe-assistant
 project_files:
   - commands
 
-dependencies:
-  - metadrop/ddev-aljibe
+
