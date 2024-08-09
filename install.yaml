@@ -4,4 +4,4 @@ project_files:
   - commands
 
 dependencies:
-  - Metadrop/ddev-aljibe
+  - metadrop/ddev-aljibe
