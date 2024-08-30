@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #ddev-generated
 
 ## Description: Create and configure a project.
@@ -11,11 +10,15 @@
 DRUSH_ALIASES_FOLDER="./drush/sites"
 
 CYAN='\033[0;36m'
-MAGENTA='\033[0;35m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 PROJECT_NAME=${DDEV_PROJECT}
 
+if [ "$1" == "--auto" ]; then
+  AUTO=1
+else
+  AUTO=0
+fi
 
 # Process example files
 processExampleFile() {
@@ -32,8 +35,10 @@ processExampleFile() {
 setConfFiles() {
   cd ${DDEV_APPROOT} || exit
 
-  echo -e "${CYAN}Please enter the project name (default to ${DDEV_PROJECT}):${NC}"
-  read PROJECT_NAME_INPUT
+  if [ "$AUTO" == "0" ]; then
+    echo -e "${CYAN}Please enter the project name (default to ${DDEV_PROJECT}):${NC}"
+    read PROJECT_NAME_INPUT
+  fi
   echo "Configuring ddev environment"
 
   if [ -z "$PROJECT_NAME_INPUT" ]; then
@@ -74,8 +79,13 @@ setConfFiles() {
 
 # Setup git repo
 setUpGit() {
-  echo -e "${CYAN}Do you want to initialize a git repository for your new project?${NC} [Y/n]"
-  read  INITIALIZE_GIT
+  if [ "$AUTO" == "0" ]; then
+    echo -e "${CYAN}Do you want to initialize a git repository for your new project?${NC} [Y/n]"
+    read  INITIALIZE_GIT
+  else
+    INITIALIZE_GIT="n"
+  fi
+
   if [ "$INITIALIZE_GIT" != "n" ]; then
     ## Init with main branch
     git init -b main
@@ -94,18 +104,24 @@ initGrumpPhp() {
 }
 
 installDrupal() {
-  echo -e "${CYAN}Do you want to install Drupal?${NC} [Y/n]"
-  read INSTALL_DRUPAL
-
-  if [ "$INSTALL_DRUPAL" != "n" ]; then
-    AVAILABLE_PROFILES=("minimal" "standard" "demo_umami")
-    echo -e "${CYAN}What install profile you want to install?${NC}"
-    select PROFILE in "${AVAILABLE_PROFILES[@]}"; do
-      echo "Installing profile $PROFILE"
-      ddev drush -y si $PROFILE
-      ddev drush cr
-      break
-    done
+  if [ "$AUTO" == "0" ]; then
+    echo -e "${CYAN}Do you want to install Drupal?${NC} [Y/n]"
+    read INSTALL_DRUPAL
+    if [ "$INSTALL_DRUPAL" != "n" ]; then
+      AVAILABLE_PROFILES=("minimal" "standard" "demo_umami")
+      echo -e "${CYAN}What install profile you want to install?${NC}"
+      select PROFILE in "${AVAILABLE_PROFILES[@]}"; do
+        echo "Installing profile $PROFILE"
+        ddev drush -y si $PROFILE
+        ddev drush cr
+        break
+      done
+    fi
+  else
+    PROFILE="standard"
+    echo "Installing profile $PROFILE"
+    ddev drush -y si $PROFILE
+    ddev drush cr
   fi
 }
 
@@ -125,8 +141,12 @@ createDirectories() {
 }
 
 createSubTheme() {
-  echo -e "${CYAN}Do you want to create a Radix sub-theme?${NC} [Y/n] "
-  read CREATE_SUB_THEME
+  if [ "$AUTO" == "0" ]; then
+    echo -e "${CYAN}Do you want to create a Radix sub-theme?${NC} [Y/n] "
+    read CREATE_SUB_THEME
+  else
+    CREATE_SUB_THEME="n"
+  fi
 
   if [ "$CREATE_SUB_THEME" != "n" ]; then
     DEFAULT_THEME_NAME=$(echo "${PROJECT_NAME}_radix" | tr '-' '_')

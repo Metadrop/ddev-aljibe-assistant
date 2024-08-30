@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #ddev-generated
 
 ## Description: Create symlinks to the scripts provided by Scripthor.
@@ -18,7 +17,7 @@ createSymlinks() {
   if createScriptDir; then
     createScriptLink
   else
-    echo "./scripts directory not created." > `tty`
+    echo "./scripts directory not created."
     exit 1
   fi
 }
@@ -26,7 +25,7 @@ createSymlinks() {
 # Create script directory
 createScriptDir() {
   if [ ! -d $DIR ]; then
-    echo "./scripts directory created with 755 permissions." > `tty`
+    echo "./scripts directory created with 755 permissions."
     mkdir $DIR
     chmod 755 $DIR
   fi
@@ -44,10 +43,10 @@ createScriptLink() {
     SCRIPT="$DIR/$FILE"
     if [ ! -f $SCRIPT ]; then
       ln -s $TARGET_DIR$FILE $SCRIPT
-      echo "Script created: $FILE" > `tty`
+      echo "Script created: $FILE"
     fi
   done
 }
 
-echo "Creating symlinks..." > `tty`
+echo "Creating symlinks..."
 createSymlinks
