@@ -1,9 +1,9 @@
 ## Aljibe assistant
+[![tests](https://github.com/Metadrop/ddev-aljibe-assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/Metadrop/ddev-aljibe-assistant/actions/workflows/tests.yml)
+![GitHub Release](https://img.shields.io/github/v/release/Metadrop/ddev-aljibe-assistant)
 
-# WIP
+# What is Aljibe assistant?
 
-Aljibe-assistant is an addon in charge of interactively installing a Drupal project based on Aljibe.
+Aljibe-assistant is an addon to add an interactive install process for a Drupal project based on Aljibe.
 
-Check Aljibe project for the instructions: https://gitlab.metadrop.net/metadrop-group/ddev-aljibe
-
-This addon is a work in progress.
+Visit **[Aljibe ddev addon](https://github.com/Metadrop/ddev-aljibe)** to know more about Aljibe.

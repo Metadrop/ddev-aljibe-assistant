@@ -26,7 +26,7 @@ teardown() {
   ddev get metadrop/ddev-aljibe
   ddev get ${DIR}
   ddev restart >/dev/null
-  ddev aljibe-assistant --auto > &3
+  ddev aljibe-assistant --auto >&3
 }
 
 @test "install from release" {
@@ -36,5 +36,5 @@ teardown() {
   ddev get metadrop/ddev-aljibe
   ddev restart >/dev/null
   # Do something useful here that verifies the add-on
-  ddev aljibe-assistant --auto > &3
+  ddev aljibe-assistant --auto >&3
 }
