@@ -14,7 +14,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 PROJECT_NAME=${DDEV_PROJECT}
 
-if [ "$1" == "--auto" ]; then
+if [ "$1" == "1" ]; then
   AUTO=1
 else
   AUTO=0

@@ -22,16 +22,19 @@ teardown() {
 @test "install from directory" {
   set -eu -o pipefail
   cd ${TESTDIR}
-  echo "# ddev get ${DIR} with project ${PROJNAME} in ${TESTDIR} ($(pwd))" >&3
+  echo "# Installing aljibe with local aljibe assistant" >&3
+  ddev get metadrop/ddev-aljibe
   ddev get ${DIR}
-  ddev restart
+  ddev restart >/dev/null
+  ddev aljibe-assistant --auto > &3
 }
 
 @test "install from release" {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
   echo "# ddev get drud/test-addon-aljibe-assistant with project ${PROJNAME} in ${TESTDIR} ($(pwd))" >&3
-  ddev get drud/test-addon-aljibe-assistant
+  ddev get metadrop/ddev-aljibe
   ddev restart >/dev/null
   # Do something useful here that verifies the add-on
+  ddev aljibe-assistant --auto > &3
 }
