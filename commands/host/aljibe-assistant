@@ -18,6 +18,6 @@ ddev aljibe-create-symlinks
 echo -e "\e[30;48;5;2m Aljibe is now installed, you can access your site here:\e[0m"
 ddev drush uli
 
-echo "Removing aljibe assistant addon"
+## echo "Removing aljibe assistant addon"
 ## Autoremove assistant
-ddev get --remove ddev-aljibe-assistant
+## ddev get --remove ddev-aljibe-assistant
