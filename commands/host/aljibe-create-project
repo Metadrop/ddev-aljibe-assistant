@@ -39,6 +39,9 @@ setConfFiles() {
     echo -e "${CYAN}Please enter the project name (default to ${DDEV_PROJECT}):${NC}"
     read PROJECT_NAME_INPUT
   fi
+
+  ddev config --php-version 8.3
+
   echo "Configuring ddev environment"
 
   if [ -z "$PROJECT_NAME_INPUT" ]; then

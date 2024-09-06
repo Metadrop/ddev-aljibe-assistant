@@ -24,6 +24,7 @@ teardown() {
   cd ${TESTDIR}
   echo "# Installing aljibe with local aljibe assistant" >&3
   ddev get metadrop/ddev-aljibe
+  # Overwrite assistant with local version
   ddev get ${DIR}
   ddev restart >/dev/null
   ddev aljibe-assistant --auto >&3
@@ -32,7 +33,7 @@ teardown() {
 @test "install from release" {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# ddev get drud/test-addon-aljibe-assistant with project ${PROJNAME} in ${TESTDIR} ($(pwd))" >&3
+  echo "# Installing aljibe with latest release of aljibe assistant" >&3
   ddev get metadrop/ddev-aljibe
   ddev restart >/dev/null
   # Do something useful here that verifies the add-on
