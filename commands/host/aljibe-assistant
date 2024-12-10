@@ -5,14 +5,19 @@
 ## Usage: aljibe-assistant
 ## Example: "ddev aljibe-assistant"
 
+# Include required scripts
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${SCRIPT_DIR}/includes/logo.sh"
+source "${SCRIPT_DIR}/includes/create_project.sh"
+
 if [ "$1" == "--auto" ]; then
   AUTO=1
 else
   AUTO=0
 fi
 
-ddev aljibe-logo
-ddev aljibe-create-project $AUTO
+show_logo
+create_project $AUTO
 
 echo -e "\e[30;48;5;2m Aljibe is now installed, you can access your site here:\e[0m"
 ddev drush uli
