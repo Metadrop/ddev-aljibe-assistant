@@ -1,4 +1,5 @@
 #!/bin/bash
+# ddev-generated
 
 # Constants
 DRUSH_ALIASES_FOLDER="./drush/sites"
@@ -14,13 +15,13 @@ create_project() {
   echo -e "${GREEN}Launching assistant to configure the environment${NC}"
   echo ""
 
-  setConfFiles
-  setUpGit
-  initDdev
-  installDrupal
-  createDirectories
-  createSubTheme
-  initGrumpPhp
+  configure_project
+  setup_git
+  init_ddev
+  install_drupal
+  create_behat_directories
+  create_sub_theme
+  init_grumphp
 }
 
 # Process example files
@@ -35,7 +36,7 @@ processExampleFile() {
 }
 
 # Setup several configuration files
-setConfFiles() {
+configure_project() {
   cd ${DDEV_APPROOT} || exit
 
   if [ "$AUTO" == "0" ]; then
@@ -81,7 +82,7 @@ setConfFiles() {
 }
 
 # Setup git repo
-setUpGit() {
+setup_git() {
   if [ "$AUTO" == "0" ]; then
     echo -e "${CYAN}Do you want to initialize a git repository for your new project?${NC} [Y/n]"
     read  INITIALIZE_GIT
@@ -97,16 +98,16 @@ setUpGit() {
   fi
 }
 
-initDdev() {
+init_ddev() {
   ddev start
   ddev composer install
 }
 
-initGrumpPhp() {
+init_grumphp() {
   ddev exec grumphp git:init
 }
 
-installDrupal() {
+install_drupal() {
   if [ "$AUTO" == "0" ]; then
     echo -e "${CYAN}Do you want to install Drupal?${NC} [Y/n]"
     read INSTALL_DRUPAL
@@ -128,7 +129,7 @@ installDrupal() {
   fi
 }
 
-createDirectories() {
+create_behat_directories() {
   BEHAT_DIR="./web/sites/default/files/behat"
   BEHAT_DIR_ERRORS="$BEHAT_DIR/errors"
 
@@ -143,7 +144,7 @@ createDirectories() {
   fi
 }
 
-createSubTheme() {
+create_sub_theme() {
   if [ "$AUTO" == "0" ]; then
     echo -e "${CYAN}Do you want to create a Radix sub-theme?${NC} [Y/n] "
     read CREATE_SUB_THEME
