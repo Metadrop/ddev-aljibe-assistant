@@ -3,6 +3,10 @@
 
 # Constants
 DRUSH_ALIASES_FOLDER="./drush/sites"
+BEHAT_LOCAL_FOLDER="./tests/behat/local"
+DRUPAL_VERSION=d11
+PROJECT_TYPE=drupal11
+PHP_VERSION="8.3"
 
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
@@ -44,41 +48,40 @@ configure_project() {
     read PROJECT_NAME_INPUT
   fi
 
-  ddev config --php-version 8.3
+  if [ "$AUTO" == "0" ]; then
+    echo -e "${CYAN}By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?${NC} [y/N]"
+    read INSTALL_DRUPAL_10
+    if [ "$INSTALL_DRUPAL_10" == "y" ] || [ "$INSTALL_DRUPAL_10" == "Y" ]; then
+      DRUPAL_VERSION=d10
+      PROJECT_TYPE=drupal10
+      echo "** Drupal 10 will be installed **"
+    else
+      echo "** Drupal 11 will be installed **"
+    fi
+  fi
 
   echo "Configuring ddev environment"
-
   if [ -z "$PROJECT_NAME_INPUT" ]; then
     PROJECT_NAME_INPUT=${DDEV_PROJECT}
   fi
-
   PROJECT_NAME=$PROJECT_NAME_INPUT
 
   echo "Configuring ddev project $PROJECT_NAME"
-  ddev config --project-type=drupal --project-name $PROJECT_NAME --docroot 'web' --auto
+  ddev config --project-type=$PROJECT_TYPE --php-version $PHP_VERSION --project-name $PROJECT_NAME --docroot 'web' --auto
 
   echo "Preparing Aljibe config file"
   cp ${DDEV_APPROOT}/.ddev/aljibe.yaml.example ${DDEV_APPROOT}/.ddev/aljibe.yaml
   sed -i "s/default_site\: self/default_site\: $PROJECT_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
 
   echo "Copying Aljibe Kickstart project files"
-  ddev aljibe-kickstart --yes
+  ddev aljibe-kickstart --yes $DRUPAL_VERSION
 
   echo "Setting up Drush aliases file"
   cp "$DRUSH_ALIASES_FOLDER/sitename.site.yml.example" "$DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml"
   sed -i "s/example/$PROJECT_NAME/g" $DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml
 
   echo "Setting up behat.yml file"
-  sed -i "s/example/$PROJECT_NAME/g" ./behat.yml
-
-  echo "Setting up BackstopJS' cookies.json file"
-  sed -i "s/example/$PROJECT_NAME/g" ./tests/functional/backstopjs/backstop_data/engine_scripts/cookies.json
-
-  echo "Setting up phpunit.xml"
-  cp "./phpunit.xml.dist" "./phpunit.xml"
-
-  echo "Setting up phpmd.xml"
-  cp "./phpmd.xml.dist" "./phpmd.xml"
+  sed -i "s/example/$PROJECT_NAME/g" $BEHAT_LOCAL_FOLDER/behat.yml
 }
 
 # Setup git repo
