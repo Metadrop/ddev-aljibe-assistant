@@ -19,7 +19,12 @@ fi
 show_logo
 create_project $AUTO
 
+ddev drush status
 ddev status
 
-echo -e "\e[30;48;5;2m Aljibe is now installed, you can access your site here:\e[0m"
-ddev drush uli
+BOOTSTRAP_STATUS=$(ddev drush status --field=bootstrap 2>/dev/null)
+echo $BOOTSTRAP_STATUS
+if [ "$BOOTSTRAP_STATUS" == "Successful" ]; then
+    echo -e "\e[30;48;5;2m Aljibe is now installed, you can access your site here:\e[0m"
+    ddev drush uli
+fi
