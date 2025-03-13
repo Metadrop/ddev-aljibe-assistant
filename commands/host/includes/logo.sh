@@ -1,5 +1,5 @@
 #!/bin/bash
-# ddev-generated
+#ddev-generated
 
 # ANSI color codes
 brown='\033[0;33m'

@@ -1,5 +1,5 @@
 #!/bin/bash
-# ddev-generated
+#ddev-generated
 
 # Constants
 DRUSH_ALIASES_FOLDER="./drush/sites"
@@ -24,8 +24,9 @@ create_project() {
   init_ddev
   install_drupal
   create_behat_directories
-  create_sub_theme
   init_grumphp
+  create_subtheme
+  add_custom_themes_to_aljibe
 }
 
 # Process example files
@@ -132,6 +133,7 @@ install_drupal() {
   fi
 }
 
+# Create behat directories
 create_behat_directories() {
   BEHAT_DIR="./web/sites/default/files/behat"
   BEHAT_DIR_ERRORS="$BEHAT_DIR/errors"
@@ -147,30 +149,17 @@ create_behat_directories() {
   fi
 }
 
-create_sub_theme() {
-  if [ "$AUTO" == "0" ]; then
-    echo -e "${CYAN}Do you want to create a Radix sub-theme?${NC} [Y/n] "
-    read CREATE_SUB_THEME
-  else
-    CREATE_SUB_THEME="n"
-  fi
+# Create artisan subtheme
+create_subtheme() {
+  # Artisan subtheme is not optional now
+  drush --include="web/themes/contrib/artisan" artisan
+}
 
-  if [ "$CREATE_SUB_THEME" != "n" ]; then
-    DEFAULT_THEME_NAME=$(echo "${PROJECT_NAME}_radix" | tr '-' '_')
-    echo -e "${CYAN}Please enter the new theme name (default to ${DEFAULT_THEME_NAME})?${NC}"
-    read THEME_NAME
-    if [ -z "$THEME_NAME" ]; then
-        THEME_NAME="${DEFAULT_THEME_NAME}"
-    fi
-    THEME_NAME=$(echo "$THEME_NAME" | tr -dc '[:alnum:]_')
-    ddev drush en components
-    ddev drush theme:enable radix -y
-    ddev drush --include="web/themes/contrib/radix" radix:create $THEME_NAME
-    ddev drush theme:enable $THEME_NAME -y
-    ddev drush config-set system.theme default $THEME_NAME -y
-    # Add theme to aljibe.yml
-    sed -i "s/custom_theme/$THEME_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
-    ddev restart
-    ddev frontend dev
-  fi
+# Update aljibe.yaml with custom themes so they can be compiled
+add_custom_themes_to_aljibe() {
+  find web/themes/custom/ -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' theme_path; do
+    THEME=$(basename "$theme_path")
+    ddev exec yq -i '.theme_paths.custom_theme = "/var/www/html/web/themes/custom/'$THEME'"' /var/www/html/.ddev/aljibe.yaml
+    echo "Añadiendo $THEME a aljibe.yaml"
+  done
 }
