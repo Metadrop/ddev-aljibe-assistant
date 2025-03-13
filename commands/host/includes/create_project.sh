@@ -152,7 +152,7 @@ create_behat_directories() {
 # Create artisan subtheme
 create_subtheme() {
   # Artisan subtheme is not optional now
-  drush --include="web/themes/contrib/artisan" artisan
+  ddev drush --include="web/themes/contrib/artisan" artisan
 }
 
 # Update aljibe.yaml with custom themes so they can be compiled
