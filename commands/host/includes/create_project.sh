@@ -72,17 +72,17 @@ configure_project() {
 
   echo "Preparing Aljibe config file"
   cp ${DDEV_APPROOT}/.ddev/aljibe.yaml.example ${DDEV_APPROOT}/.ddev/aljibe.yaml
-  sed -i "s/default_site\: self/default_site\: $PROJECT_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
+  d_sed_i "s/default_site\: self/default_site\: $PROJECT_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
 
   echo "Copying Aljibe Kickstart project files"
   ddev aljibe-kickstart --yes $DRUPAL_VERSION
 
   echo "Setting up Drush aliases file"
   cp "$DRUSH_ALIASES_FOLDER/sitename.site.yml.example" "$DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml"
-  sed -i "s/example/$PROJECT_NAME/g" $DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml
+  d_sed_i "s/example/$PROJECT_NAME/g" $DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml
 
   echo "Setting up behat.yml file"
-  sed -i "s/example/$PROJECT_NAME/g" $BEHAT_LOCAL_FOLDER/behat.yml
+  d_sed_i "s/example/$PROJECT_NAME/g" $BEHAT_LOCAL_FOLDER/behat.yml
 }
 
 # Setup git repo
