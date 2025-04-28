@@ -123,7 +123,7 @@ install_drupal() {
     read INSTALL_DRUPAL
     if [ "$INSTALL_DRUPAL" != "n" ]; then
       AVAILABLE_PROFILES=("minimal" "standard" "demo_umami")
-      echo -e "${CYAN}What install profile you want to install?${NC}"
+      echo -e "${CYAN}What install profile you want to install (minimal recommended for development)?${NC}"
       select PROFILE in "${AVAILABLE_PROFILES[@]}"; do
         echo "Installing profile $PROFILE"
         ddev drush -y si $PROFILE
@@ -132,7 +132,7 @@ install_drupal() {
       done
     fi
   else
-    PROFILE="standard"
+    PROFILE="minimal"
     echo "Installing profile $PROFILE"
     ddev drush -y si $PROFILE
     ddev drush cr
