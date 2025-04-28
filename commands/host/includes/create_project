@@ -6,6 +6,7 @@ DRUSH_ALIASES_FOLDER="./drush/sites"
 BEHAT_LOCAL_FOLDER="./tests/behat/local"
 DRUPAL_VERSION=d11
 PROJECT_TYPE=drupal11
+INSTALL_DRUPAL_10="n"
 PHP_VERSION="8.3"
 
 CYAN='\033[0;36m'
@@ -13,6 +14,11 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 PROJECT_NAME=${DDEV_PROJECT}
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${SCRIPT_DIR}/includes/os-detector"
+
+# Create project
+# This function is called from the main script to create a new project
 create_project() {
   local AUTO=$1
 
@@ -72,17 +78,17 @@ configure_project() {
 
   echo "Preparing Aljibe config file"
   cp ${DDEV_APPROOT}/.ddev/aljibe.yaml.example ${DDEV_APPROOT}/.ddev/aljibe.yaml
-  d_sed_i "s/default_site\: self/default_site\: $PROJECT_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
+  os_custom_sed "s/default_site\: self/default_site\: $PROJECT_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
 
   echo "Copying Aljibe Kickstart project files"
   ddev aljibe-kickstart --yes $DRUPAL_VERSION
 
   echo "Setting up Drush aliases file"
   cp "$DRUSH_ALIASES_FOLDER/sitename.site.yml.example" "$DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml"
-  d_sed_i "s/example/$PROJECT_NAME/g" $DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml
+  os_custom_sed "s/example/$PROJECT_NAME/g" $DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml
 
   echo "Setting up behat.yml file"
-  d_sed_i "s/example/$PROJECT_NAME/g" $BEHAT_LOCAL_FOLDER/behat.yml
+  os_custom_sed "s/example/$PROJECT_NAME/g" $BEHAT_LOCAL_FOLDER/behat.yml
 }
 
 # Setup git repo
@@ -162,4 +168,14 @@ add_custom_themes_to_aljibe() {
     ddev exec yq -i '.theme_paths.custom_theme = "/var/www/html/web/themes/custom/'$THEME'"' /var/www/html/.ddev/aljibe.yaml
     echo "Añadiendo $THEME a aljibe.yaml"
   done
+}
+
+os_custom_sed () {
+    if [ "$DETECTED_SO" = "mac" ]; then
+        # MacOS sed requires a backup extension, so we use 'bak' as a placeholder
+        sed -i bak "$@"
+    else
+        # Linux sed supports -i without a backup extension
+        sed -i "$@"
+    fi
 }

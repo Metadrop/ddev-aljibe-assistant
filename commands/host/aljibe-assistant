@@ -7,8 +7,8 @@
 
 # Include required scripts
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "${SCRIPT_DIR}/includes/logo.sh"
-source "${SCRIPT_DIR}/includes/create_project.sh"
+source "${SCRIPT_DIR}/includes/logo"
+source "${SCRIPT_DIR}/includes/create_project"
 
 if [ "$1" == "--auto" ]; then
   AUTO=1

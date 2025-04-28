@@ -3,4 +3,9 @@ name: aljibe-assistant
 project_files:
   - commands
 
+dependencies:
+  - metadrop/ddev-aljibe
 
+post_install:
+  - rm -f .ddev/commands/host/includes/create_project.sh # Clean up old files if exists
+  - rm -f .ddev/commands/host/includes/logo.sh # Clean up old files if exists
