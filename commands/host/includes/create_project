@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 PROJECT_NAME=${DDEV_PROJECT}
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "${SCRIPT_DIR}/includes/os-detector"
+source "${SCRIPT_DIR}/aljibe_includes"
 
 # Create project
 # This function is called from the main script to create a new project
