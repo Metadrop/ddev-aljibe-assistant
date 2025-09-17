@@ -33,6 +33,7 @@ create_project() {
   behat_setup
   backstopjs_setup
   grumphp_setup
+  artefact_generator_setup
   create_subtheme
   add_custom_themes_to_aljibe
 }
@@ -165,6 +166,11 @@ behat_setup() {
 # required files are provided in the Aljibe Kickstart.
 backstopjs_setup() {
   return;
+}
+
+artefact_generator_setup() {
+  echo "Setting up artefact generator configuration file"
+  cp ${DDEV_APPROOT}/vendor/metadrop/drupal-artifact-builder/.drupal-artifact-builder.yml.dist ${DDEV_APPROOT}/.drupal-artifact-builder.yml
 }
 
 # Create artisan subtheme
