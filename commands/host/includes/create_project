@@ -26,11 +26,13 @@ create_project() {
   echo ""
 
   configure_project
-  setup_git
-  init_ddev
-  install_drupal
-  create_behat_directories
-  init_grumphp
+  git_setup
+  ddev_start
+  composer_install
+  drupal_install
+  behat_setup
+  backstopjs_setup
+  grumphp_setup
   create_subtheme
   add_custom_themes_to_aljibe
 }
@@ -92,7 +94,7 @@ configure_project() {
 }
 
 # Setup git repo
-setup_git() {
+git_setup() {
   if [ "$AUTO" == "0" ]; then
     echo -e "${CYAN}Do you want to initialize a git repository for your new project?${NC} [Y/n]"
     read  INITIALIZE_GIT
@@ -108,16 +110,19 @@ setup_git() {
   fi
 }
 
-init_ddev() {
+ddev_start() {
   ddev start
+}
+
+composer_install() {
   ddev composer install
 }
 
-init_grumphp() {
+grumphp_setup() {
   ddev exec grumphp git:init
 }
 
-install_drupal() {
+drupal_install() {
   if [ "$AUTO" == "0" ]; then
     echo -e "${CYAN}Do you want to install Drupal?${NC} [Y/n]"
     read INSTALL_DRUPAL
@@ -140,7 +145,7 @@ install_drupal() {
 }
 
 # Create behat directories
-create_behat_directories() {
+behat_setup() {
   BEHAT_DIR="./web/sites/default/files/behat"
   BEHAT_DIR_ERRORS="$BEHAT_DIR/errors"
 
@@ -153,6 +158,13 @@ create_behat_directories() {
     mkdir -p "$BEHAT_DIR_ERRORS"
     chmod 755 "$BEHAT_DIR_ERRORS"
   fi
+}
+
+# Setup BackstopJS
+# Currently empty as there are no special steps needed to setup BackstopJS. All
+# required files are provided in the Aljibe Kickstart.
+backstopjs_setup() {
+  return;
 }
 
 # Create artisan subtheme
