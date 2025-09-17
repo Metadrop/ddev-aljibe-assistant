@@ -33,6 +33,7 @@ create_project() {
   behat_setup
   backstopjs_setup
   grumphp_setup
+  phpunit_setup
   artefact_generator_setup
   create_subtheme
   add_custom_themes_to_aljibe
@@ -171,6 +172,43 @@ backstopjs_setup() {
 artefact_generator_setup() {
   echo "Setting up artefact generator configuration file"
   cp ${DDEV_APPROOT}/vendor/metadrop/drupal-artifact-builder/.drupal-artifact-builder.yml.dist ${DDEV_APPROOT}/.drupal-artifact-builder.yml
+}
+
+phpunit_setup() {
+  echo "Setting up phpunit configuration file"
+  cp ${DDEV_APPROOT}/web/core/phpunit.xml.dist ${DDEV_APPROOT}/phpunit.xml
+
+  # While https://www.drupal.org/project/drupal/issues/354725 is active we have
+  # to edit PHPUnit conf file with fragile sed commands (the following lines do
+  # this).
+
+  echo "Configuring PHPUnit output directory"
+  os_custom_sed "s|<parameter name=\"outputDirectory\" value=\"\"/>|<parameter name=\"outputDirectory\" value=\"${DDEV_APPROOT}/web/sites/default/files/simpletest/browser_output\"/>|g" ${DDEV_APPROOT}/phpunit.xml
+
+  # echo "Configuring PHPUnit base URL"
+  # os_custom_sed "s|<env name=\"BROWSERTEST_OUTPUT_BASE_URL\" value=\"\"/>|<env name=\"BROWSERTEST_OUTPUT_BASE_URL\" value=\"${DDEV_PRIMARY_URL}\"/>|g" ${DDEV_APPROOT}/phpunit.xml
+
+  echo "Configuring PHPUnit base URL"
+  os_custom_sed "s|<env name=\"SIMPLETEST_BASE_URL\" value=\"\"/>|<env name=\"SIMPLETEST_BASE_URL\" value=\"${DDEV_PRIMARY_URL}\"/>|g" ${DDEV_APPROOT}/phpunit.xml
+
+  echo "Configuring PHPUnit directory paths"
+  os_custom_sed "s|<directory>|<directory>web/core/|g" ${DDEV_APPROOT}/phpunit.xml
+
+  echo "Configuring PHPUnit bootstrap file"
+  os_custom_sed "s|tests/bootstrap\.php|web/core/tests/bootstrap.php|" ${DDEV_APPROOT}/phpunit.xml
+
+  echo "Configuring PHPUnit database connection"
+  os_custom_sed "s|<env name=\"SIMPLETEST_DB\" value=\"\"/>|<env name=\"SIMPLETEST_DB\" value=\"mysql://db:db@db:3306/db\"/>|g" ${DDEV_APPROOT}/phpunit.xml
+
+  echo "Configuring tests output folder"
+  os_custom_sed "s|sites/simpletest/browser_output|web/sites/simpletest/browser_output|" ${DDEV_APPROOT}/phpunit.xml
+
+  echo "Setting up output folder"
+  os_custom_sed "s/example/$PROJECT_NAME/g" $BEHAT_LOCAL_FOLDER/behat.yml
+
+  echo "Create tests output folder"
+  mkdir ${DDEV_APPROOT}/web/sites/simpletest/browser_output -p
+  chmod 755 ${DDEV_APPROOT}/web/sites/simpletest/browser_output
 }
 
 # Create artisan subtheme
