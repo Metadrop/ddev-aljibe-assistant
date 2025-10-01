@@ -39,16 +39,6 @@ create_project() {
   add_custom_themes_to_aljibe
 }
 
-# Process example files
-processExampleFile() {
-  PATH=$1
-  SUFFIX=$2
-  declare -A REPLACEMENTS=$3
-  cp "$PATH$SUFFIX" "$PATH"
-  for KEY in "${!REPLACEMENTS[@]}"; do
-    replaceInFile "$PATH" "$KEY" "${REPLACEMENTS[$KEY]}"
-  done
-}
 
 # Setup several configuration files
 configure_project() {
