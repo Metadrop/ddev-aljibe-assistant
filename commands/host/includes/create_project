@@ -94,6 +94,7 @@ create_project() {
   # Parse command line arguments if provided
   parse_arguments "$@"
 
+  configure_project
   git_setup
   ddev_start
   composer_install
