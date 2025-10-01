@@ -1,31 +1,101 @@
 #!/bin/bash
 #ddev-generated
 
+
+
 # Constants
 DRUSH_ALIASES_FOLDER="./drush/sites"
 BEHAT_LOCAL_FOLDER="./tests/behat/local"
-DRUPAL_VERSION=d11
-PROJECT_TYPE=drupal11
 INSTALL_DRUPAL_10="n"
+ARTISAN_AUTO_INSTALL_PARAM=""
 PHP_VERSION="8.3"
 
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
-PROJECT_NAME=${DDEV_PROJECT}
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "${SCRIPT_DIR}/aljibe_includes"
 
+
+# Default values for options
+AUTO=0
+DEFAULT_PROJECT_CORE=11
+DEFAULT_PROFILE="minimal"
+
+
+# Variables
+declare PROJECT_CORE
+declare PROJECT_NAME
+declare SETUP_GIT_REPO
+declare INSTALL_DRUPAL
+declare INSTALL_PROFILE
+declare INSTALL_ARTISAN_SUBTHEME
+
+
+
+# Parse command line arguments
+parse_arguments() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -a|--auto)
+        AUTO=1
+        shift
+        ;;
+      -n|--name)
+        PROJECT_NAME="$2"
+        echo "Received project name: $PROJECT_NAME"
+        shift 2
+        ;;
+      -c|--core)
+        if [[ "$2" == "10" || "$2" == "11" ]]; then
+          echo "Received Drupal core version: $2"
+          PROJECT_CORE="$2"
+        else
+          echo "Error: Invalid Drupal core version. Only 10 or 11 are valid."
+          exit 1
+        fi
+        shift 2
+        ;;
+      -g|--git)
+        SETUP_GIT_REPO=0
+        echo "Git repository will NOT be initialized"
+        shift
+        ;;
+      -i|--install)
+        INSTALL_DRUPAL=0
+        echo "Drupal will be installed"
+        shift
+        ;;
+      -t|--theme)
+        INSTALL_ARTISAN_SUBTHEME=1
+        echo "Artisan theme will installed and a subtheme will be created"
+        shift
+        ;;
+      -p|--profile)
+        INSTALL_PROFILE="$2"
+        echo "Received install profile: $INSTALL_PROFILE"
+        shift 2
+        ;;
+      *)
+        echo "Error: Unknown option $1"
+        exit 1
+        ;;
+    esac
+  done
+}
+
 # Create project
 # This function is called from the main script to create a new project
 create_project() {
-  local AUTO=$1
-
   echo -e "${GREEN}Launching assistant to configure the environment${NC}"
   echo ""
 
-  configure_project
+  # Parse command line arguments if provided
+  parse_arguments "$@"
+
+
+  #configure_project
   git_setup
   ddev_start
   composer_install
@@ -42,40 +112,43 @@ create_project() {
 
 # Setup several configuration files
 configure_project() {
+
   cd ${DDEV_APPROOT} || exit
 
-  if [ "$AUTO" == "0" ]; then
-    echo -e "${CYAN}Please enter the project name (default to ${DDEV_PROJECT}):${NC}"
-    read PROJECT_NAME_INPUT
-  fi
-
-  if [ "$AUTO" == "0" ]; then
-    echo -e "${CYAN}By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?${NC} [y/N]"
-    read INSTALL_DRUPAL_10
-    if [ "$INSTALL_DRUPAL_10" == "y" ] || [ "$INSTALL_DRUPAL_10" == "Y" ]; then
-      DRUPAL_VERSION=d10
-      PROJECT_TYPE=drupal10
-      echo "** Drupal 10 will be installed **"
-    else
-      echo "** Drupal 11 will be installed **"
+  # Set project name.
+  if [ -z "$PROJECT_NAME" ]; then
+    if [ "$AUTO" == "0" ]; then
+      echo -e "${CYAN}Please enter the project name (default to ${DDEV_PROJECT}):${NC}"
+      read PROJECT_NAME_INPUT
     fi
+    PROJECT_NAME=${PROJECT_NAME_INPUT:-$DDEV_PROJECT}
   fi
 
-  echo "Configuring ddev environment"
-  if [ -z "$PROJECT_NAME_INPUT" ]; then
-    PROJECT_NAME_INPUT=${DDEV_PROJECT}
+
+  # Set core to install.
+  if [ -z "$PROJECT_CORE" ]; then
+    if [ "$AUTO" == "0" ]; then
+      echo -e "${CYAN}By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?${NC} [y/N]"
+      read INSTALL_DRUPAL_10
+
+      if [ "$INSTALL_DRUPAL_10" == "y" ] || [ "$INSTALL_DRUPAL_10" == "Y" ]; then
+        PROJECT_CORE=10
+      fi
+    fi
+    PROJECT_CORE=${PROJECT_CORE:-$DEFAULT_PROJECT_CORE}
   fi
-  PROJECT_NAME=$PROJECT_NAME_INPUT
+
+  echo "Configuring DDEV environment"
 
   echo "Configuring ddev project $PROJECT_NAME"
-  ddev config --project-type=$PROJECT_TYPE --php-version $PHP_VERSION --project-name $PROJECT_NAME --docroot 'web' --auto
+  ddev config --project-type=drupal$PROJECT_CORE --php-version $PHP_VERSION --project-name $PROJECT_NAME --docroot 'web' --auto
 
   echo "Preparing Aljibe config file"
   cp ${DDEV_APPROOT}/.ddev/aljibe.yaml.example ${DDEV_APPROOT}/.ddev/aljibe.yaml
   os_custom_sed "s/default_site\: self/default_site\: $PROJECT_NAME/g" ${DDEV_APPROOT}/.ddev/aljibe.yaml
 
   echo "Copying Aljibe Kickstart project files"
-  ddev aljibe-kickstart --yes $DRUPAL_VERSION
+  ddev aljibe-kickstart --yes d$PROJECT_CORE
 
   echo "Setting up Drush aliases file"
   cp "$DRUSH_ALIASES_FOLDER/sitename.site.yml.example" "$DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml"
@@ -87,17 +160,24 @@ configure_project() {
 
 # Setup git repo
 git_setup() {
-  if [ "$AUTO" == "0" ]; then
-    echo -e "${CYAN}Do you want to initialize a git repository for your new project?${NC} [Y/n]"
-    read  INITIALIZE_GIT
-  else
-    INITIALIZE_GIT="n"
+
+  if [ -z "$SETUP_GIT_REPO" ]; then
+    if [ "$AUTO" == "0" ]; then
+      echo -e "${CYAN}Do you want to initialize a git repository for your new project?${NC} [Y/n]"
+      read  INITIALIZE_GIT
+
+      if [ "$INITIALIZE_GIT" == "n" ]; then
+        SETUP_GIT_REPO=0
+      fi
+    fi
+    SETUP_GIT_REPO=${SETUP_GIT_REPO:-1}
   fi
 
-  if [ "$INITIALIZE_GIT" != "n" ]; then
+  if [ "$SETUP_GIT_REPO" == "1" ]; then
     ## Init with main branch
+    echo "Initializing git repository"
     git init -b main
-    ## Create develop branch
+    # ## Create develop branch
     git checkout -b develop
   fi
 }
@@ -115,31 +195,60 @@ grumphp_setup() {
 }
 
 drupal_install() {
-  if [ "$AUTO" == "0" ]; then
-    echo -e "${CYAN}Do you want to install Drupal?${NC} [Y/n]"
-    read INSTALL_DRUPAL
-    if [ "$INSTALL_DRUPAL" != "n" ]; then
-      AVAILABLE_PROFILES=("minimal" "standard" "demo_umami")
-      echo -e "${CYAN}What install profile you want to install (minimal recommended for development)?${NC}"
-      select PROFILE in "${AVAILABLE_PROFILES[@]}"; do
-        echo "Installing profile $PROFILE"
-        ddev drush -y si $PROFILE
-        ddev drush cr
-        break
-      done
+
+  if [ -z "$INSTALL_DRUPAL" ]; then
+    if [ "$AUTO" == "0" ]; then
+      echo -e "${CYAN}Do you want to install Drupal?${NC} [Y/n]"
+      read SHOULD_INSTALL
+
+      if [ "$SHOULD_INSTALL" == "n" ]; then
+        INSTALL_DRUPAL=0
+      fi
     fi
-  else
-    PROFILE="minimal"
-    echo "Installing profile $PROFILE"
-    ddev drush -y si $PROFILE
+    INSTALL_DRUPAL=${INSTALL_DRUPAL:-1}
+  fi
+
+  if [ "$INSTALL_DRUPAL" == "1" ]; then
+
+    if [ -z "$INSTALL_PROFILE" ]; then
+      if [ "$AUTO" == "0" ]; then
+        AVAILABLE_PROFILES=("Minimal" "Standard" "Umami demo")
+
+        while [ -z "$INSTALL_PROFILE" ]; do
+          echo -e "${CYAN}What install profile you want to install ('Minimal' is recommended for development)?${NC}"
+          select PROFILE in "${AVAILABLE_PROFILES[@]}"; do
+            case $PROFILE in
+              "Minimal")
+                INSTALL_PROFILE="minimal"
+                ;;
+              "Standard")
+                INSTALL_PROFILE="standard"
+                ;;
+              "Umami demo")
+                INSTALL_PROFILE="demo_umami"
+                ;;
+              *)
+                echo "Invalid option. Please select a valid profile."
+                continue
+                ;;
+            esac
+            break
+          done
+        done
+      fi
+      INSTALL_PROFILE=${INSTALL_PROFILE:-$DEFAULT_PROFILE}
+    fi
+
+    echo "Installing profile $INSTALL_PROFILE"
+    ddev drush -y si "$INSTALL_PROFILE"
     ddev drush cr
   fi
 }
 
 # Create behat directories
 behat_setup() {
-  BEHAT_DIR="./web/sites/default/files/behat"
-  BEHAT_DIR_ERRORS="$BEHAT_DIR/errors"
+  local BEHAT_DIR="./web/sites/default/files/behat"
+  local BEHAT_DIR_ERRORS="$BEHAT_DIR/errors"
 
   if [ ! -d "$BEHAT_DIR" ]; then
     mkdir -p "$BEHAT_DIR"
@@ -201,10 +310,36 @@ phpunit_setup() {
   chmod 755 ${DDEV_APPROOT}/web/sites/simpletest/browser_output
 }
 
+
 # Create artisan subtheme
 create_subtheme() {
-  # Artisan subtheme is not optional now
-  ddev drush --include="web/themes/contrib/artisan" artisan
+
+  local SHOULD_INSTALL
+
+  if [ -z "$INSTALL_ARTISAN_SUBTHEME" ]; then
+    if [ "$AUTO" == "0" ]; then
+      echo -e "${CYAN}Do you want to create an Artisan subtheme?:${NC} [Y/n]"
+      read SHOULD_INSTALL
+
+      if [ "$SHOULD_INSTALL" != "n" ]; then
+        INSTALL_ARTISAN_SUBTHEME=1
+      fi
+    fi
+    INSTALL_ARTISAN_SUBTHEME=${INSTALL_ARTISAN_SUBTHEME:-0}
+  fi
+
+  if [ "$INSTALL_ARTISAN_SUBTHEME" == "1" ]; then
+    echo "Installing Artisan theme dependency"
+    echo ddev composer require drupal/artisan
+    echo "Creating Artisan subtheme"
+
+    if [ $AUTO == "1" ]; then
+      ARTISAN_AUTO_INSTALL_PARAM="-y"
+    fi
+
+    echo ddev drush --include="web/themes/contrib/artisan" artisan:subtheme:create $ARTISAN_AUTO_INSTALL_PARAM
+    echo "Artisan subtheme created"
+  fi
 }
 
 # Update aljibe.yaml with custom themes so they can be compiled
