@@ -124,9 +124,9 @@ display_question() {
 
 # Format a strings as a yes/no question.
 # $1: Question text
+# $2: Additional prompt text (e.g., "[y/N]")
 display_yesno_question() {
-  #echo -en "${CYAN}$1${NC} [Y/n]"
-  _question "${CYAN}$1"  "[Y/n]"
+  _question "${CYAN}$1"  "${2:-[Y/n]}"
 }
 
 # Determine some choices and setup several configuration files
@@ -147,7 +147,7 @@ configure_project() {
   # Set core to install.
   if [ -z "$PROJECT_CORE" ]; then
     if [ "$AUTO" == "0" ]; then
-      display_yesno_question "By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?"
+      display_yesno_question "By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?" "[y/N]"
       read INSTALL_DRUPAL_10
 
       if [ "$INSTALL_DRUPAL_10" == "y" ] || [ "$INSTALL_DRUPAL_10" == "Y" ]; then
