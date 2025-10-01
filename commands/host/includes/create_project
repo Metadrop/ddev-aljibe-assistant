@@ -88,8 +88,7 @@ parse_arguments() {
 # Create project
 # This function is called from the main script to create a new project
 create_project() {
-  echo -e "${GREEN}Launching assistant to configure the environment${NC}"
-  echo ""
+  echo -e "${GREEN}$1${NC}\n"
 
   # Parse command line arguments if provided
   parse_arguments "$@"
@@ -110,6 +109,24 @@ create_project() {
 }
 
 
+# Internal function to display a question.
+_question() {
+  echo -en "${CYAN}$1${NC} $2 "
+}
+
+# Format a strings as a generic question.
+# $1: Question text
+display_question() {
+  _question "$1:"
+}
+
+# Format a strings as a yes/no question.
+# $1: Question text
+display_yesno_question() {
+  #echo -en "${CYAN}$1${NC} [Y/n]"
+  _question "${CYAN}$1"  "[Y/n]"
+}
+
 # Setup several configuration files
 configure_project() {
 
@@ -118,7 +135,7 @@ configure_project() {
   # Set project name.
   if [ -z "$PROJECT_NAME" ]; then
     if [ "$AUTO" == "0" ]; then
-      echo -e "${CYAN}Please enter the project name (default to ${DDEV_PROJECT}):${NC}"
+      display_question "Please enter the project name (default to ${DDEV_PROJECT})"
       read PROJECT_NAME_INPUT
     fi
     PROJECT_NAME=${PROJECT_NAME_INPUT:-$DDEV_PROJECT}
@@ -128,7 +145,7 @@ configure_project() {
   # Set core to install.
   if [ -z "$PROJECT_CORE" ]; then
     if [ "$AUTO" == "0" ]; then
-      echo -e "${CYAN}By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?${NC} [y/N]"
+      display_yesno_question "By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?"
       read INSTALL_DRUPAL_10
 
       if [ "$INSTALL_DRUPAL_10" == "y" ] || [ "$INSTALL_DRUPAL_10" == "Y" ]; then
@@ -163,7 +180,7 @@ git_setup() {
 
   if [ -z "$SETUP_GIT_REPO" ]; then
     if [ "$AUTO" == "0" ]; then
-      echo -e "${CYAN}Do you want to initialize a git repository for your new project?${NC} [Y/n]"
+      display_yesno_question "Do you want to initialize a git repository for your new project?"
       read  INITIALIZE_GIT
 
       if [ "$INITIALIZE_GIT" == "n" ]; then
@@ -198,7 +215,7 @@ drupal_install() {
 
   if [ -z "$INSTALL_DRUPAL" ]; then
     if [ "$AUTO" == "0" ]; then
-      echo -e "${CYAN}Do you want to install Drupal?${NC} [Y/n]"
+      display_yesno_question "Do you want to install Drupal?"
       read SHOULD_INSTALL
 
       if [ "$SHOULD_INSTALL" == "n" ]; then
@@ -215,7 +232,8 @@ drupal_install() {
         AVAILABLE_PROFILES=("Minimal" "Standard" "Umami demo")
 
         while [ -z "$INSTALL_PROFILE" ]; do
-          echo -e "${CYAN}What install profile you want to install ('Minimal' is recommended for development)?${NC}"
+          display_question "What install profile you want to install ('Minimal' is recommended for development)?"
+          echo ""
           select PROFILE in "${AVAILABLE_PROFILES[@]}"; do
             case $PROFILE in
               "Minimal")
@@ -318,7 +336,7 @@ create_subtheme() {
 
   if [ -z "$INSTALL_ARTISAN_SUBTHEME" ]; then
     if [ "$AUTO" == "0" ]; then
-      echo -e "${CYAN}Do you want to create an Artisan subtheme?:${NC} [Y/n]"
+      display_yesno_question "Do you want to create an Artisan subtheme?"
       read SHOULD_INSTALL
 
       if [ "$SHOULD_INSTALL" != "n" ]; then
