@@ -9,7 +9,6 @@ BEHAT_LOCAL_FOLDER="./tests/behat/local"
 INSTALL_DRUPAL_10="n"
 ARTISAN_AUTO_INSTALL_PARAM=""
 PHP_VERSION="8.3"
-
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -31,7 +30,6 @@ declare SETUP_GIT_REPO
 declare INSTALL_DRUPAL
 declare INSTALL_PROFILE
 declare INSTALL_ARTISAN_SUBTHEME
-
 
 
 # Parse command line arguments
@@ -85,16 +83,15 @@ parse_arguments() {
   done
 }
 
-# Create project
-# This function is called from the main script to create a new project
+# Create project.
+#
+# This function is called from the main script to create a new project.
 create_project() {
   echo -e "${GREEN}$1${NC}\n"
 
   # Parse command line arguments if provided
   parse_arguments "$@"
 
-
-  #configure_project
   git_setup
   ddev_start
   composer_install
@@ -194,7 +191,7 @@ git_setup() {
     ## Init with main branch
     echo "Initializing git repository"
     git init -b main
-    # ## Create develop branch
+    # Create develop branch
     git checkout -b develop
   fi
 }
@@ -302,6 +299,9 @@ phpunit_setup() {
   echo "Configuring PHPUnit output directory"
   os_custom_sed "s|<parameter name=\"outputDirectory\" value=\"\"/>|<parameter name=\"outputDirectory\" value=\"${DDEV_APPROOT}/web/sites/default/files/simpletest/browser_output\"/>|g" ${DDEV_APPROOT}/phpunit.xml
 
+  # It is not clear if we need to set this. Apparently it is only required when
+  # the site is not in root path of the domain. That would hard to defect here
+  # in this assistant.
   # echo "Configuring PHPUnit base URL"
   # os_custom_sed "s|<env name=\"BROWSERTEST_OUTPUT_BASE_URL\" value=\"\"/>|<env name=\"BROWSERTEST_OUTPUT_BASE_URL\" value=\"${DDEV_PRIMARY_URL}\"/>|g" ${DDEV_APPROOT}/phpunit.xml
 
