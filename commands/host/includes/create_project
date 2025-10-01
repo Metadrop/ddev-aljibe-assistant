@@ -32,7 +32,9 @@ declare INSTALL_PROFILE
 declare INSTALL_ARTISAN_SUBTHEME
 
 
-# Parse command line arguments
+# Parse command line arguments.
+#
+# Processes command line flags and options to configure project creation.
 parse_arguments() {
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -107,6 +109,8 @@ create_project() {
 
 
 # Internal function to display a question.
+# $1: Question text
+# $2: Additional prompt text (e.g., "[Y/n]")
 _question() {
   echo -en "${CYAN}$1${NC} $2 "
 }
@@ -124,7 +128,7 @@ display_yesno_question() {
   _question "${CYAN}$1"  "[Y/n]"
 }
 
-# Setup several configuration files
+# Determine some choices and setup several configuration files
 configure_project() {
 
   cd ${DDEV_APPROOT} || exit
@@ -172,7 +176,9 @@ configure_project() {
   os_custom_sed "s/example/$PROJECT_NAME/g" $BEHAT_LOCAL_FOLDER/behat.yml
 }
 
-# Setup git repo
+# Setup git repository.
+#
+# Initializes a new git repository with main and develop branches, if required.
 git_setup() {
 
   if [ -z "$SETUP_GIT_REPO" ]; then
@@ -196,18 +202,31 @@ git_setup() {
   fi
 }
 
+# Start DDEV environment.
+#
+# Starts the DDEV container for the project.
 ddev_start() {
   ddev start
 }
 
+# Install Composer dependencies.
+#
+# Runs composer install inside the DDEV container to install all project
+# dependencies defined in composer.json.
 composer_install() {
   ddev composer install
 }
 
+# Setup GrumPHP.
+#
+# Initializes GrumPHP git hooks for code quality checks on commits.
 grumphp_setup() {
   ddev exec grumphp git:init
 }
 
+# Install Drupal.
+#
+# Installs Drupal using drush site-install with the appropriate profile.
 drupal_install() {
 
   if [ -z "$INSTALL_DRUPAL" ]; then
@@ -277,17 +296,25 @@ behat_setup() {
 }
 
 # Setup BackstopJS
+#
 # Currently empty as there are no special steps needed to setup BackstopJS. All
 # required files are provided in the Aljibe Kickstart.
 backstopjs_setup() {
   return;
 }
 
+# Setup artifact generator.
+#
+# Copies the Drupal artifact builder configuration file template to the project
+# root for deployment artifact generation.
 artefact_generator_setup() {
   echo "Setting up artefact generator configuration file"
   cp ${DDEV_APPROOT}/vendor/metadrop/drupal-artifact-builder/.drupal-artifact-builder.yml.dist ${DDEV_APPROOT}/.drupal-artifact-builder.yml
 }
 
+# Setup PHPUnit.
+#
+# Configures PHPUnit for Drupal testing by copying and customizing phpunit.xml.
 phpunit_setup() {
   echo "Setting up phpunit configuration file"
   cp ${DDEV_APPROOT}/web/core/phpunit.xml.dist ${DDEV_APPROOT}/phpunit.xml
@@ -329,7 +356,10 @@ phpunit_setup() {
 }
 
 
-# Create artisan subtheme
+# Create Artisan subtheme.
+#
+# Prompts user to install the Artisan base theme and create a subtheme if
+# required.
 create_subtheme() {
 
   local SHOULD_INSTALL
@@ -360,7 +390,10 @@ create_subtheme() {
   fi
 }
 
-# Update aljibe.yaml with custom themes so they can be compiled
+# Update aljibe.yaml with custom themes.
+#
+# Scans web/themes/custom/ directory and adds all custom themes to aljibe.yaml
+# configuration file so they can be compiled by the theme build system.
 add_custom_themes_to_aljibe() {
   find web/themes/custom/ -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' theme_path; do
     THEME=$(basename "$theme_path")
@@ -369,6 +402,13 @@ add_custom_themes_to_aljibe() {
   done
 }
 
+# Cross-platform sed wrapper.
+#
+# Provides consistent sed -i behavior across macOS and Linux. macOS sed requires
+# a backup extension parameter while Linux sed does not.
+#
+# Arguments:
+#   $@: All arguments are passed to sed command
 os_custom_sed () {
     if [ "$DETECTED_SO" = "mac" ]; then
         # MacOS sed requires a backup extension, so we use 'bak' as a placeholder
