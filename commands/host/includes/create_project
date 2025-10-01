@@ -379,7 +379,7 @@ create_subtheme() {
 
   if [ "$INSTALL_ARTISAN_SUBTHEME" == "1" ]; then
     echo "Installing Artisan theme dependency"
-    echo ddev composer require drupal/artisan
+    ddev composer require drupal/artisan
     echo "Creating Artisan subtheme"
 
     if [ $AUTO == "1" ]; then
