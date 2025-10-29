@@ -94,8 +94,11 @@ create_project() {
   # Parse command line arguments if provided
   parse_arguments "$@"
 
+
+
   configure_project
   git_setup
+  aljibe_extensions_setup
   ddev_start
   composer_install
   drupal_install
@@ -203,6 +206,31 @@ git_setup() {
   fi
 }
 
+
+aljibe_extensions_setup() {
+  _question "Please select the Aljibe extensions you want to enable for your project (space to toggle, enter to accept):"
+  echo ""
+  available_aljibe_extension_labels=(   "Adminer (Database web interface)"  "MkDocs (Documentation)"   "Behat (Acceptance tests)"  "BackstopJS (Visual regression testing)"  "Pa11y (Accessibility checker)"  "Unlighthouse (Quality, performance and correctness testing)"  "Newman (API testing)"  )
+  available_aljibe_extensions=(   "adminer"  "mkdocs"  "selenium"  "backstopjs"  "pa11y"  "unlighthouse"  "newman"  )
+  preselection=( "true"      "true"      "true"      "true"      "true"      "true"   "true" )
+
+  multiselect result available_aljibe_extensions available_aljibe_extension_labels preselection
+
+  for i in "${!available_aljibe_extensions[@]}"; do
+    local current="${available_aljibe_extensions[i]}"
+    if [ "${result[i]}" == "true" ]; then
+      echo "Installing $current"
+      echo ddev add-on get Metadrop/ddev-$current
+    else
+      local item_installed=$(ddev add-on list --installed | grep $current  | wc -l)
+
+      if [ $item_installed -ne 0 ]; then
+        echo "Removing $current"
+        echo "ddev add-on remove Metadrop/ddev-$current"
+      fi
+    fi
+  done
+}
 # Start DDEV environment.
 #
 # Starts the DDEV container for the project.
@@ -418,4 +446,115 @@ os_custom_sed () {
         # Linux sed supports -i without a backup extension
         sed -i "$@"
     fi
+}
+
+
+
+# Present a menu to select multiple options.
+#
+# Coe adpated to have a list of lalbes and vales,instead just values that are
+# used also as values. Original code from StackOverflow user miu, that also
+# adpated code from  Denis Semenenko'adapted.
+# See https://unix.stackexchange.com/a/673436/170651.
+#
+# $1: variable name where to put the result.
+# $2: an array of option values as strings.
+# $3: an array of option labels as strings.
+# $4: an array of default values as strings containing "true" or "false".
+function multiselect {
+    # little helpers for terminal print control and key input
+    ESC=$( printf "\033")
+    cursor_blink_on()   { printf "$ESC[?25h"; }
+    cursor_blink_off()  { printf "$ESC[?25l"; }
+    cursor_to()         { printf "$ESC[$1;${2:-1}H"; }
+    print_inactive()    { printf "$2   $1 "; }
+    print_active()      { printf "$2  $ESC[7m $1 $ESC[27m"; }
+    get_cursor_row()    { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
+
+    local return_value=$1
+    local -n options=$2
+    local -n labels=$3
+    local -n defaults=$4
+
+    local selected=()
+    for ((i=0; i<${#options[@]}; i++)); do
+        if [[ ${defaults[i]} = "true" ]]; then
+            selected+=("true")
+        else
+            selected+=("false")
+        fi
+        printf "\n"
+    done
+
+    # determine current screen position for overwriting the options
+    local lastrow=`get_cursor_row`
+    local startrow=$(($lastrow - ${#options[@]}))
+
+    # ensure cursor and input echoing back on upon a ctrl+c during read -s
+    trap "cursor_blink_on; stty echo; printf '\n'; exit" 2
+    cursor_blink_off
+
+    key_input() {
+        local key
+        IFS= read -rsn1 key 2>/dev/null >&2
+        if [[ $key = ""      ]]; then echo enter; fi;
+        if [[ $key = $'\x20' ]]; then echo space; fi;
+        if [[ $key = "k" ]]; then echo up; fi;
+        if [[ $key = "j" ]]; then echo down; fi;
+        if [[ $key = $'\x1b' ]]; then
+            read -rsn2 key
+            if [[ $key = [A || $key = k ]]; then echo up;    fi;
+            if [[ $key = [B || $key = j ]]; then echo down;  fi;
+        fi
+    }
+
+    toggle_option() {
+        local option=$1
+        if [[ ${selected[option]} == true ]]; then
+            selected[option]=false
+        else
+            selected[option]=true
+        fi
+    }
+
+    print_options() {
+        # print options by overwriting the last lines
+        local idx=0
+        for label in "${labels[@]}"; do
+            local prefix="[ ]"
+            if [[ ${selected[idx]} == true ]]; then
+              prefix="[\e[38;5;46m✔\e[0m]"
+            fi
+
+            cursor_to $(($startrow + $idx))
+            if [ $idx -eq $1 ]; then
+                print_active "$label" "$prefix"
+            else
+                print_inactive "$label" "$prefix"
+            fi
+            ((idx++))
+        done
+    }
+
+    local active=0
+    while true; do
+        print_options $active
+
+        # user key control
+        case `key_input` in
+            space)  toggle_option $active;;
+            enter)  print_options -1; break;;
+            up)     ((active--));
+                    if [ $active -lt 0 ]; then active=$((${#options[@]} - 1)); fi;;
+            down)   ((active++));
+                    if [ $active -ge ${#options[@]} ]; then active=0; fi;;
+        esac
+    done
+
+    # cursor position back to normal
+    cursor_to $lastrow
+    printf "\n"
+    cursor_blink_on
+
+    eval $return_value='("${selected[@]}")'
 }
