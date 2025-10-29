@@ -57,6 +57,11 @@ parse_arguments() {
         fi
         shift 2
         ;;
+      -e|--extensions)
+        PROVIDED_ALJIBE_EXTENSIONS=$2
+        echo "Extensions to install: $PROVIDED_ALJIBE_EXTENSIONS"
+        shift 2
+        ;;
       -g|--git)
         SETUP_GIT_REPO=0
         echo "Git repository will NOT be initialized"
