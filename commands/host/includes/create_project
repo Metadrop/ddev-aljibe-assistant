@@ -216,7 +216,7 @@ aljibe_extensions_setup() {
   _question "Please select the Aljibe extensions you want to enable for your project (space to toggle, enter to accept):"
   echo ""
   available_aljibe_extension_labels=(   "Adminer (Database web interface)"  "MkDocs (Documentation)"   "Behat (Acceptance tests)"  "BackstopJS (Visual regression testing)"  "Pa11y (Accessibility checker)"  "Unlighthouse (Quality, performance and correctness testing)"  "Newman (API testing)"  )
-  available_aljibe_extensions=(   "adminer"  "mkdocs"  "selenium"  "backstopjs"  "pa11y"  "unlighthouse"  "newman"  )
+  available_aljibe_extensions=(   "ddev/ddev-adminer"  "Metadrop/ddev-mkdocs"  "Metadrop/ddev-selenium"  "Metadrop/ddev-backstopjs"  "Metadrop/ddev-pa11y"  "Metadrop/ddev-unlighthouse"  "Metadrop/ddev-newman"  )
   preselection=( "true"      "true"      "true"      "true"      "true"      "true"   "true" )
 
   multiselect result available_aljibe_extensions available_aljibe_extension_labels preselection
@@ -225,13 +225,13 @@ aljibe_extensions_setup() {
     local current="${available_aljibe_extensions[i]}"
     if [ "${result[i]}" == "true" ]; then
       echo "Installing $current"
-      echo ddev add-on get Metadrop/ddev-$current
+      ddev add-on get $current
     else
       local item_installed=$(ddev add-on list --installed | grep $current  | wc -l)
 
       if [ $item_installed -ne 0 ]; then
         echo "Removing $current"
-        echo "ddev add-on remove Metadrop/ddev-$current"
+        ddev add-on remove $current
       fi
     fi
   done
