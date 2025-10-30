@@ -429,6 +429,12 @@ create_subtheme() {
 # Scans web/themes/custom/ directory and adds all custom themes to aljibe.yaml
 # configuration file so they can be compiled by the theme build system.
 add_custom_themes_to_aljibe() {
+
+  if [ ! -d "web/themes/custom/" ]; then
+    return
+  fi
+
+
   find web/themes/custom/ -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' theme_path; do
     THEME=$(basename "$theme_path")
     ddev exec yq -i '.theme_paths.custom_theme = "/var/www/html/web/themes/custom/'$THEME'"' /var/www/html/.ddev/aljibe.yaml
