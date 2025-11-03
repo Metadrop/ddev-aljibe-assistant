@@ -1,17 +1,35 @@
+#!/bin/bash
+
+# Standard DDEV add-on setup code taken from official DDEV add-ons.
 setup() {
   set -eu -o pipefail
-  export DIR
-  DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )/.."
-  export TESTDIR=~/tmp/test-addon-aljibe-assistant
-  mkdir -p $TESTDIR
-  export PROJNAME=test-addon-aljibe-assistant
-  export DDEV_NON_INTERACTIVE=true
-  ddev delete -Oy ${PROJNAME} >/dev/null 2>&1 || true
+  export GITHUB_REPO=Metadrop/ddev-aljibe-assistant
+  TEST_BREW_PREFIX="$(brew --prefix 2>/dev/null || true)"
+  export BATS_LIB_PATH="${BATS_LIB_PATH}:${TEST_BREW_PREFIX}/lib:/usr/lib/bats"
+  bats_load_library bats-assert
+  bats_load_library bats-file
+  bats_load_library bats-support
+
+  # shellcheck disable=SC2155
+  export DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." >/dev/null 2>&1 && pwd)"
+  # shellcheck disable=SC2155
+  export PROJNAME="test-$(basename "${GITHUB_REPO}")"
+
+  mkdir -p ~/tmp
+  # shellcheck disable=SC2155
+  export TESTDIR=$(mktemp -d ~/tmp/${PROJNAME}.XXXXXX)
+  export DDEV_NONINTERACTIVE=true
+  export DDEV_NO_INSTRUMENTATION=true
+  ddev delete -Oy "${PROJNAME}" >/dev/null 2>&1 || true
+
   cd "${TESTDIR}"
-  ddev config --project-name=${PROJNAME}
-  ddev start -y >/dev/null
+  run ddev config --project-name="${PROJNAME}" --project-tld=ddev.site
+  assert_success
+  run ddev start -y
+  assert_success
 }
 
+# Standard DDEV add-on tear down code taken from official DDEV add-ons.
 teardown() {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
@@ -19,23 +37,35 @@ teardown() {
   [ "${TESTDIR}" != "" ] && rm -rf ${TESTDIR}
 }
 
+# Checks Aljibe assistant runs in auto mode successfully.
+check_assistant_run_auto_mode() {
+  ddev aljibe-assistant --auto >&3
+  assert_success
+}
+
 @test "install from directory" {
   set -eu -o pipefail
-  cd ${TESTDIR}
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
   echo "# Installing aljibe with local aljibe assistant" >&3
-  ddev get metadrop/ddev-aljibe
+
+  ddev add-on get metadrop/ddev-aljibe
+
   # Overwrite assistant with local version
-  ddev get ${DIR}
+  ddev add-on get ${DIR}
+
   ddev restart >/dev/null
-  ddev aljibe-assistant --auto >&3
+
+  check_assistant_run_auto_mode
 }
 
 @test "install from release" {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
   echo "# Installing aljibe with latest release of aljibe assistant" >&3
-  ddev get metadrop/ddev-aljibe
+
+  # Install from release.
+  ddev add-on get metadrop/ddev-aljibe
   ddev restart >/dev/null
-  # Do something useful here that verifies the add-on
-  ddev aljibe-assistant --auto >&3
+
+  check_assistant_run_auto_mode
 }

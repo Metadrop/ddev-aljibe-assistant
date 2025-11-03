@@ -215,19 +215,25 @@ git_setup() {
 aljibe_extensions_setup() {
   _question "Please select the Aljibe extensions you want to enable for your project (space to toggle, enter to accept):"
   echo ""
+  #
+  # shellcheck disable=SC2034
   available_aljibe_extension_labels=(   "Adminer (Database web interface)"  "MkDocs (Documentation)"   "Behat (Acceptance tests)"  "BackstopJS (Visual regression testing)"  "Pa11y (Accessibility checker)"  "Unlighthouse (Quality, performance and correctness testing)"  "Newman (API testing)"  )
+  # shellcheck disable=SC2034
   available_aljibe_extensions=(   "ddev/ddev-adminer"  "Metadrop/ddev-mkdocs"  "Metadrop/ddev-selenium"  "Metadrop/ddev-backstopjs"  "Metadrop/ddev-pa11y"  "Metadrop/ddev-unlighthouse"  "Metadrop/ddev-newman"  )
+  # shellcheck disable=SC2034
   preselection=( "true"      "true"      "true"      "true"      "true"      "true"   "true" )
 
   multiselect result available_aljibe_extensions available_aljibe_extension_labels preselection
 
   for i in "${!available_aljibe_extensions[@]}"; do
     local current="${available_aljibe_extensions[i]}"
+    # shellcheck disable=SC2154
     if [ "${result[i]}" == "true" ]; then
       echo "Installing $current"
       ddev add-on get $current
     else
-      local item_installed=$(ddev add-on list --installed | grep $current  | wc -l)
+      local item_installed
+      item_installed=$(ddev add-on list --installed | grep $current  | wc -l)
 
       if [ $item_installed -ne 0 ]; then
         echo "Removing $current"
@@ -473,13 +479,19 @@ os_custom_sed () {
 # $3: an array of option labels as strings.
 # $4: an array of default values as strings containing "true" or "false".
 function multiselect {
-    # little helpers for terminal print control and key input
+    # Little helpers for terminal print control and key input
+    # Disable shellcheck SC1087 because it misinterprets the escape sequences.
     ESC=$( printf "\033")
+    # shellcheck disable=SC1087
     cursor_blink_on()   { printf "$ESC[?25h"; }
+    # shellcheck disable=SC1087
     cursor_blink_off()  { printf "$ESC[?25l"; }
+    # shellcheck disable=SC1087
     cursor_to()         { printf "$ESC[$1;${2:-1}H"; }
     print_inactive()    { printf "$2   $1 "; }
+    # shellcheck disable=SC1087,SC2034
     print_active()      { printf "$2  $ESC[7m $1 $ESC[27m"; }
+    # shellcheck disable=SC2034
     get_cursor_row()    { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
 
     local return_value=$1
@@ -498,7 +510,8 @@ function multiselect {
     done
 
     # determine current screen position for overwriting the options
-    local lastrow=`get_cursor_row`
+    local lastrow
+    lastrow=$(get_cursor_row)
     local startrow=$(($lastrow - ${#options[@]}))
 
     # ensure cursor and input echoing back on upon a ctrl+c during read -s
