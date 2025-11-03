@@ -247,7 +247,9 @@ aljibe_extensions_setup() {
       ddev add-on get $current
     else
       local item_installed
-      item_installed=$(ddev add-on list --installed | grep $current  | wc -l)
+      local item_name
+      item_name=$(basename "$current")
+      item_installed=$(ddev add-on list --installed | grep -ic "$item_name")
 
       if [ $item_installed -ne 0 ]; then
         echo "Removing $current"
