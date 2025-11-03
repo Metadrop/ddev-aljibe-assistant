@@ -10,10 +10,13 @@ setup() {
   bats_load_library bats-file
   bats_load_library bats-support
 
+  # shellcheck disable=SC2155
   export DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." >/dev/null 2>&1 && pwd)"
+  # shellcheck disable=SC2155
   export PROJNAME="test-$(basename "${GITHUB_REPO}")"
 
   mkdir -p ~/tmp
+  # shellcheck disable=SC2155
   export TESTDIR=$(mktemp -d ~/tmp/${PROJNAME}.XXXXXX)
   export DDEV_NONINTERACTIVE=true
   export DDEV_NO_INSTRUMENTATION=true
