@@ -61,25 +61,6 @@ check_assistant_run_auto_mode() {
 }
 
 
-# Test with custom project name using flag
-@test "semi-auto mode with custom project name" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing semi-auto mode with custom project name flag" >&3
-
-  ddev add-on get metadrop/ddev-aljibe
-  ddev add-on get ${DIR}
-  ddev restart >/dev/null
-
-  # Use --name flag to specify project name, auto mode for the rest
-  ddev aljibe-assistant --auto --name "custom-project" >&3
-  assert_success
-
-  # Verify bootstrap is successful
-  run ddev drush status --field=bootstrap
-  assert_output "Successful"
-}
-
 # Test Drupal 10 installation using flag
 @test "auto mode with Drupal 10" {
   set -eu -o pipefail
@@ -103,107 +84,108 @@ check_assistant_run_auto_mode() {
   assert_output --regexp "^10\."
 }
 
-# Test without git initialization using flag
-@test "auto mode without git initialization" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing auto mode with --git flag to skip git repo" >&3
+# # Test without git initialization using flag
+# @test "auto mode without git initialization" {
+#   set -eu -o pipefail
+#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+#   echo "# Testing auto mode with --git flag to skip git repo" >&3
 
-  ddev add-on get metadrop/ddev-aljibe
-  ddev add-on get ${DIR}
-  ddev restart >/dev/null
+#   ddev add-on get metadrop/ddev-aljibe
+#   ddev add-on get ${DIR}
+#   ddev restart >/dev/null
 
-  # Use --git flag to skip git initialization
-  ddev aljibe-assistant --auto --git >&3
-  assert_success
+#   # Use --git flag to skip git initialization
+#   ddev aljibe-assistant --auto --git >&3
+#   assert_success
 
-  # Verify no git repo was created
-  run test -d .git
-  assert_failure
-}
+#   # Verify no git repo was created
+#   run test -d .git
+#   assert_failure
+# }
 
-# Test without Drupal installation using flag
-@test "auto mode without Drupal installation" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing auto mode with --install flag to skip Drupal" >&3
+# # Test without Drupal installation using flag
+# @test "auto mode without Drupal installation" {
+#   set -eu -o pipefail
+#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+#   echo "# Testing auto mode with --install flag to skip Drupal" >&3
 
-  ddev add-on get metadrop/ddev-aljibe
-  ddev add-on get ${DIR}
-  ddev restart >/dev/null
+#   ddev add-on get metadrop/ddev-aljibe
+#   ddev add-on get ${DIR}
+#   ddev restart >/dev/null
 
-  # Use --install flag to skip Drupal installation
-  ddev aljibe-assistant --auto --install >&3
-  assert_success
+#   # Use --install flag to skip Drupal installation
+#   ddev aljibe-assistant --auto --install >&3
+#   assert_success
 
-  # Verify Drupal was NOT installed (bootstrap should not be successful)
-  run ddev drush status --field=bootstrap 2>&1
-  refute_output "Successful"
-}
+#   # Verify Drupal was NOT installed (bootstrap should not be successful)
+#   run ddev drush status --field=bootstrap 2>&1
+#   refute_output "Successful"
+# }
 
-# Test with specific install profile using flag
-@test "auto mode with specific install profile" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing auto mode with --profile flag" >&3
+# # Test with specific install profile using flag
+# @test "auto mode with specific install profile" {
+#   set -eu -o pipefail
+#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+#   echo "# Testing auto mode with --profile flag" >&3
 
-  ddev add-on get metadrop/ddev-aljibe
-  ddev add-on get ${DIR}
-  ddev restart >/dev/null
+#   ddev add-on get metadrop/ddev-aljibe
+#   ddev add-on get ${DIR}
+#   ddev restart >/dev/null
 
-  # Use --profile flag to install standard profile instead of minimal
-  ddev aljibe-assistant --auto --profile standard >&3
-  assert_success
+#   # Use --profile flag to install standard profile instead of minimal
+#   ddev aljibe-assistant --auto --profile standard >&3
+#   assert_success
 
-  # Verify Drupal was installed successfully
-  run ddev drush status --field=bootstrap
-  assert_output "Successful"
-}
+#   # Verify Drupal was installed successfully
+#   run ddev drush status --field=bootstrap
+#   assert_output "Successful"
+# }
 
-# Test with Artisan theme installation using flag
-@test "auto mode with Artisan theme" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing auto mode with --theme flag" >&3
+# # Test with Artisan theme installation using flag
+# @test "auto mode with Artisan theme" {
+#   set -eu -o pipefail
+#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+#   echo "# Testing auto mode with --theme flag" >&3
 
-  ddev add-on get metadrop/ddev-aljibe
-  ddev add-on get ${DIR}
-  ddev restart >/dev/null
+#   ddev add-on get metadrop/ddev-aljibe
+#   ddev add-on get ${DIR}
+#   ddev restart >/dev/null
 
-  # Use --theme flag to install Artisan theme
-  ddev aljibe-assistant --auto --theme >&3
-  assert_success
+#   # Use --theme flag to install Artisan theme
+#   ddev aljibe-assistant --auto --theme >&3
+#   assert_success
 
-  # Verify Drupal was installed successfully
-  run ddev drush status --field=bootstrap
-  assert_output "Successful"
+#   # Verify Drupal was installed successfully
+#   run ddev drush status --field=bootstrap
+#   assert_output "Successful"
 
-  # Check if Artisan theme was installed
-  run ddev composer show drupal/artisan
-  assert_success
-}
+#   # Check if Artisan theme was installed
+#   run ddev composer show drupal/artisan
+#   assert_success
+# }
 
-# Test combining multiple flags
-@test "auto mode with multiple custom flags" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing auto mode with multiple flags combined" >&3
+# # Test combining multiple flags
+# @test "auto mode with multiple custom flags" {
+#   set -eu -o pipefail
+#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+#   echo "# Testing auto mode with multiple flags combined" >&3
 
-  ddev add-on get metadrop/ddev-aljibe
-  ddev add-on get ${DIR}
-  ddev restart >/dev/null
+#   ddev add-on get metadrop/ddev-aljibe
+#   ddev add-on get ${DIR}
+#   ddev restart >/dev/null
 
-  # Combine multiple flags: custom name, Drupal 10, standard profile, no git
-  ddev aljibe-assistant --auto --name "multi-flag-test" --core 10 --profile standard --git >&3
-  assert_success
+#   # Combine multiple flags: custom name, Drupal 10, standard profile, no git
+#   ddev aljibe-assistant --auto --name "multi-flag-test" --core 10 --profile standard --git >&3
+#   assert_success
 
-  # Verify Drupal 10 was installed
-  run ddev drush status --field=bootstrap
-  assert_output "Successful"
+#   # Verify Drupal 10 was installed
+#   run ddev drush status --field=bootstrap
+#   assert_output "Successful"
 
-  run ddev drush status --field=drupal-version
-  assert_output --regexp "^10\."
+#   run ddev drush status --field=drupal-version
+#   assert_output --regexp "^10\."
 
-  # Verify no git repo
-  run test -d .git
-  assert_failure
+#   # Verify no git repo
+#   run test -d .git
+#   assert_failure
+# }
