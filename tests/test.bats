@@ -69,3 +69,143 @@ check_assistant_run_auto_mode() {
 
   check_assistant_run_auto_mode
 }
+
+# Test interactive mode with all defaults (just pressing Enter)
+@test "interactive mode with all defaults" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Installing aljibe and testing interactive mode with defaults" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Simulate pressing Enter for all prompts (accept defaults)
+  # This uses 'yes' to send empty lines (Enter key presses)
+  echo "# Running interactive mode with default values (pressing Enter)" >&3
+  yes "" | timeout 300 ddev aljibe-assistant >&3 || true
+
+  # Verify the project was created successfully
+  run ddev drush status --field=bootstrap
+  assert_output "Successful"
+}
+
+# Test interactive mode with custom project name
+@test "interactive mode with custom project name" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Testing interactive mode with custom project name" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Simulate user input: custom project name, then defaults for everything else
+  # Input sequence:
+  # 1. "custom-project" - custom project name
+  # 2. "" (Enter) - accept Drupal 11 (default)
+  # 3. "" (Enter) - initialize git repo (default)
+  # 4. Enter - accept default extensions
+  # 5. "" (Enter) - install Drupal (default)
+  # 6. "1" - select Minimal profile
+  # 7. "" (Enter) - don't create Artisan subtheme (default)
+  echo "# Running with custom project name" >&3
+  {
+    echo "custom-project"
+    yes ""
+  } | timeout 300 ddev aljibe-assistant >&3 || true
+
+  # Verify bootstrap is successful
+  run ddev drush status --field=bootstrap
+  assert_output "Successful"
+}
+
+# Test interactive mode choosing Drupal 10
+@test "interactive mode with Drupal 10 selection" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Testing interactive mode with Drupal 10 selection" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Input sequence:
+  # 1. "" (Enter) - use default project name
+  # 2. "y" - install Drupal 10 instead of 11
+  # 3. Then defaults for everything else
+  echo "# Running with Drupal 10 selection" >&3
+  {
+    echo ""
+    echo "y"
+    yes ""
+  } | timeout 300 ddev aljibe-assistant >&3 || true
+
+  # Verify Drupal was installed
+  run ddev drush status --field=bootstrap
+  assert_output "Successful"
+
+  # Verify it's Drupal 10
+  run ddev drush status --field=drupal-version
+  assert_output --regexp "^10\."
+}
+
+# Test interactive mode skipping git initialization
+@test "interactive mode without git initialization" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Testing interactive mode without git initialization" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Input sequence:
+  # 1. "" (Enter) - default project name
+  # 2. "" (Enter) - Drupal 11
+  # 3. "n" - don't initialize git
+  # 4. Then defaults for everything else
+  echo "# Running without git initialization" >&3
+  {
+    echo ""
+    echo ""
+    echo "n"
+    yes ""
+  } | timeout 300 ddev aljibe-assistant >&3 || true
+
+  # Verify no git repo was created
+  run test -d .git
+  assert_failure
+}
+
+# Test interactive mode skipping Drupal installation
+@test "interactive mode without Drupal installation" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Testing interactive mode without Drupal installation" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Input sequence:
+  # 1. "" (Enter) - default project name
+  # 2. "" (Enter) - Drupal 11
+  # 3. "" (Enter) - initialize git
+  # 4. Enter - accept default extensions
+  # 5. "n" - don't install Drupal
+  # 6. "" (Enter) - don't create Artisan subtheme
+  echo "# Running without Drupal installation" >&3
+  {
+    echo ""
+    echo ""
+    echo ""
+    echo ""
+    echo "n"
+    echo ""
+  } | timeout 300 ddev aljibe-assistant >&3 || true
+
+  # Verify Drupal was NOT installed (bootstrap should not be successful)
+  run ddev drush status --field=bootstrap 2>&1
+  refute_output "Successful"
+}
