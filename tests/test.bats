@@ -27,6 +27,13 @@ setup() {
   assert_success
   run ddev start -y
   assert_success
+
+  # Configure GitHub token for composer to avoid rate limiting
+  # The token is passed as an environment variable from GitHub Actions
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    echo "# Configuring composer with GitHub token to avoid rate limiting" >&3
+    ddev exec composer config -g github-oauth.github.com "${GITHUB_TOKEN}" >/dev/null 2>&1 || true
+  fi
 }
 
 # Standard DDEV add-on tear down code taken from official DDEV add-ons.
