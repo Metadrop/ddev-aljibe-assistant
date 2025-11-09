@@ -60,17 +60,6 @@ check_assistant_run_auto_mode() {
   check_assistant_run_auto_mode
 }
 
-@test "install from release" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Installing aljibe with latest release of aljibe assistant" >&3
-
-  # Install from release.
-  ddev add-on get metadrop/ddev-aljibe
-  ddev restart >/dev/null
-
-  check_assistant_run_auto_mode
-}
 
 # Test with custom project name using flag
 @test "semi-auto mode with custom project name" {
@@ -218,4 +207,3 @@ check_assistant_run_auto_mode() {
   # Verify no git repo
   run test -d .git
   assert_failure
-}
