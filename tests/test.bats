@@ -32,9 +32,11 @@ setup() {
 # Standard DDEV add-on tear down code taken from official DDEV add-ons.
 teardown() {
   set -eu -o pipefail
+  echo "# Tearing down test environment" >&3
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
   ddev delete -Oy ${PROJNAME} >/dev/null 2>&1
   [ "${TESTDIR}" != "" ] && rm -rf ${TESTDIR}
+  echo "# Teardown complete" >&3
 }
 
 # Checks Aljibe assistant runs in auto mode successfully.
