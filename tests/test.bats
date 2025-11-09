@@ -70,76 +70,38 @@ check_assistant_run_auto_mode() {
   check_assistant_run_auto_mode
 }
 
-# Test interactive mode with all defaults (just pressing Enter)
-@test "interactive mode with all defaults" {
+# Test with custom project name using flag
+@test "semi-auto mode with custom project name" {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Installing aljibe and testing interactive mode with defaults" >&3
+  echo "# Testing semi-auto mode with custom project name flag" >&3
 
   ddev add-on get metadrop/ddev-aljibe
   ddev add-on get ${DIR}
   ddev restart >/dev/null
 
-  # Simulate pressing Enter for all prompts (accept defaults)
-  # This uses 'yes' to send empty lines (Enter key presses)
-  echo "# Running interactive mode with default values (pressing Enter)" >&3
-  yes "" | timeout 300 ddev aljibe-assistant >&3 || true
-
-  # Verify the project was created successfully
-  run ddev drush status --field=bootstrap
-  assert_output "Successful"
-}
-
-# Test interactive mode with custom project name
-@test "interactive mode with custom project name" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing interactive mode with custom project name" >&3
-
-  ddev add-on get metadrop/ddev-aljibe
-  ddev add-on get ${DIR}
-  ddev restart >/dev/null
-
-  # Simulate user input: custom project name, then defaults for everything else
-  # Input sequence:
-  # 1. "custom-project" - custom project name
-  # 2. "" (Enter) - accept Drupal 11 (default)
-  # 3. "" (Enter) - initialize git repo (default)
-  # 4. Enter - accept default extensions
-  # 5. "" (Enter) - install Drupal (default)
-  # 6. "1" - select Minimal profile
-  # 7. "" (Enter) - don't create Artisan subtheme (default)
-  echo "# Running with custom project name" >&3
-  {
-    echo "custom-project"
-    yes ""
-  } | timeout 300 ddev aljibe-assistant >&3 || true
+  # Use --name flag to specify project name, auto mode for the rest
+  ddev aljibe-assistant --auto --name "custom-project" >&3
+  assert_success
 
   # Verify bootstrap is successful
   run ddev drush status --field=bootstrap
   assert_output "Successful"
 }
 
-# Test interactive mode choosing Drupal 10
-@test "interactive mode with Drupal 10 selection" {
+# Test Drupal 10 installation using flag
+@test "auto mode with Drupal 10" {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing interactive mode with Drupal 10 selection" >&3
+  echo "# Testing auto mode with Drupal 10 flag" >&3
 
   ddev add-on get metadrop/ddev-aljibe
   ddev add-on get ${DIR}
   ddev restart >/dev/null
 
-  # Input sequence:
-  # 1. "" (Enter) - use default project name
-  # 2. "y" - install Drupal 10 instead of 11
-  # 3. Then defaults for everything else
-  echo "# Running with Drupal 10 selection" >&3
-  {
-    echo ""
-    echo "y"
-    yes ""
-  } | timeout 300 ddev aljibe-assistant >&3 || true
+  # Use --core flag to install Drupal 10
+  ddev aljibe-assistant --auto --core 10 >&3
+  assert_success
 
   # Verify Drupal was installed
   run ddev drush status --field=bootstrap
@@ -150,62 +112,108 @@ check_assistant_run_auto_mode() {
   assert_output --regexp "^10\."
 }
 
-# Test interactive mode skipping git initialization
-@test "interactive mode without git initialization" {
+# Test without git initialization using flag
+@test "auto mode without git initialization" {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing interactive mode without git initialization" >&3
+  echo "# Testing auto mode with --git flag to skip git repo" >&3
 
   ddev add-on get metadrop/ddev-aljibe
   ddev add-on get ${DIR}
   ddev restart >/dev/null
 
-  # Input sequence:
-  # 1. "" (Enter) - default project name
-  # 2. "" (Enter) - Drupal 11
-  # 3. "n" - don't initialize git
-  # 4. Then defaults for everything else
-  echo "# Running without git initialization" >&3
-  {
-    echo ""
-    echo ""
-    echo "n"
-    yes ""
-  } | timeout 300 ddev aljibe-assistant >&3 || true
+  # Use --git flag to skip git initialization
+  ddev aljibe-assistant --auto --git >&3
+  assert_success
 
   # Verify no git repo was created
   run test -d .git
   assert_failure
 }
 
-# Test interactive mode skipping Drupal installation
-@test "interactive mode without Drupal installation" {
+# Test without Drupal installation using flag
+@test "auto mode without Drupal installation" {
   set -eu -o pipefail
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing interactive mode without Drupal installation" >&3
+  echo "# Testing auto mode with --install flag to skip Drupal" >&3
 
   ddev add-on get metadrop/ddev-aljibe
   ddev add-on get ${DIR}
   ddev restart >/dev/null
 
-  # Input sequence:
-  # 1. "" (Enter) - default project name
-  # 2. "" (Enter) - Drupal 11
-  # 3. "" (Enter) - initialize git
-  # 4. Enter - accept default extensions
-  # 5. "n" - don't install Drupal
-  # 6. "" (Enter) - don't create Artisan subtheme
-  echo "# Running without Drupal installation" >&3
-  {
-    echo ""
-    echo ""
-    echo ""
-    echo ""
-    echo "n"
-    echo ""
-  } | timeout 300 ddev aljibe-assistant >&3 || true
+  # Use --install flag to skip Drupal installation
+  ddev aljibe-assistant --auto --install >&3
+  assert_success
 
   # Verify Drupal was NOT installed (bootstrap should not be successful)
   run ddev drush status --field=bootstrap 2>&1
   refute_output "Successful"
+}
+
+# Test with specific install profile using flag
+@test "auto mode with specific install profile" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Testing auto mode with --profile flag" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Use --profile flag to install standard profile instead of minimal
+  ddev aljibe-assistant --auto --profile standard >&3
+  assert_success
+
+  # Verify Drupal was installed successfully
+  run ddev drush status --field=bootstrap
+  assert_output "Successful"
+}
+
+# Test with Artisan theme installation using flag
+@test "auto mode with Artisan theme" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Testing auto mode with --theme flag" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Use --theme flag to install Artisan theme
+  ddev aljibe-assistant --auto --theme >&3
+  assert_success
+
+  # Verify Drupal was installed successfully
+  run ddev drush status --field=bootstrap
+  assert_output "Successful"
+
+  # Check if Artisan theme was installed
+  run ddev composer show drupal/artisan
+  assert_success
+}
+
+# Test combining multiple flags
+@test "auto mode with multiple custom flags" {
+  set -eu -o pipefail
+  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
+  echo "# Testing auto mode with multiple flags combined" >&3
+
+  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get ${DIR}
+  ddev restart >/dev/null
+
+  # Combine multiple flags: custom name, Drupal 10, standard profile, no git
+  ddev aljibe-assistant --auto --name "multi-flag-test" --core 10 --profile standard --git >&3
+  assert_success
+
+  # Verify Drupal 10 was installed
+  run ddev drush status --field=bootstrap
+  assert_output "Successful"
+
+  run ddev drush status --field=drupal-version
+  assert_output --regexp "^10\."
+
+  # Verify no git repo
+  run test -d .git
+  assert_failure
 }
