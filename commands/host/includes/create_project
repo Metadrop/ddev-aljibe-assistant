@@ -440,12 +440,13 @@ create_subtheme() {
 
   if [ -z "$INSTALL_ARTISAN_SUBTHEME" ]; then
     if [ "$AUTO" == "0" ]; then
-      display_yesno_question "Do you want to create an Artisan subtheme?"
+      display_yesno_question "Do you want to create an Artisan subtheme?" "[y/N]"
       read SHOULD_INSTALL
 
-      if [ "$SHOULD_INSTALL" != "n" ]; then
-        INSTALL_ARTISAN_SUBTHEME=1
+      if [ "$SHOULD_INSTALL" == "y" ] || [ "$SHOULD_INSTALL" == "Y" ]; then
+        INSTALL_ARTISAN_SUBTHEME=0
       fi
+
     fi
     INSTALL_ARTISAN_SUBTHEME=${INSTALL_ARTISAN_SUBTHEME:-0}
   fi
