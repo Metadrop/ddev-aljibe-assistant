@@ -21,7 +21,7 @@ source "${SCRIPT_DIR}/aljibe_includes"
 AUTO=0
 DEFAULT_PROJECT_CORE=11
 DEFAULT_PROFILE="minimal"
-
+TESTING_MODE=0
 
 # Variables
 declare PROJECT_CORE
@@ -81,6 +81,12 @@ parse_arguments() {
         INSTALL_PROFILE="$2"
         echo "Received install profile: $INSTALL_PROFILE"
         shift 2
+        ;;
+      --testing)
+        # Undocumented flag for testing purposes.
+        TESTING_MODE=1
+        echo "Enabling testing mode"
+        shift 1
         ;;
       *)
         echo "Error: Unknown option $1"
@@ -223,10 +229,11 @@ aljibe_extensions_setup() {
   preselection=( "true"      "true"      "true"      "true"      "true"      "true"   "true" )
 
   if [ -z "$PROVIDED_ALJIBE_EXTENSIONS" ]; then
-    if [ "$AUTO" == "0" ]; then
+    # If testing mode is enabled act like in auto mode because we cannot
+    # interactively select options.
+    if [ "$AUTO" == "0" ] && [ "$TESTING_MODE" != "1" ]; then
       _question "Please select the Aljibe extensions you want to enable for your project (space to toggle, enter to accept):"
       echo ""
-      #
 
       local available_aljibe_extension_labels
       # shellcheck disable=SC2034
