@@ -32,9 +32,10 @@ setup() {
   # The token is passed as an environment variable from GitHub Actions
   if [ -n "${GITHUB_TOKEN:-}" ]; then
     echo "# Configuring composer with GitHub token to avoid rate limiting" >&3
-    ddev exec composer config -g github-oauth.github.com "${GITHUB_TOKEN}" >/dev/null 2>&1 || true
+    echo "{\"github-oauth\": {\"github.com\": \"${GITHUB_TOKEN}\"}}" > auth.json
   fi
 }
+
 
 # Standard DDEV add-on tear down code taken from official DDEV add-ons.
 teardown() {
@@ -42,157 +43,204 @@ teardown() {
   echo "# Tearing down test environment" >&3
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
   ddev delete -Oy ${PROJNAME} >/dev/null 2>&1
+  cd ..
   [ "${TESTDIR}" != "" ] && rm -rf ${TESTDIR}
   echo "# Teardown complete" >&3
 }
 
-# Checks Aljibe assistant runs in auto mode successfully.
-check_assistant_run_auto_mode() {
-  ddev aljibe-assistant --auto >&3
-  assert_success
-}
 
-@test "install from directory" {
+# Common actions before running a tests.
+#
+# Sets the corerct bash flags, displays the test title, and installs Aljibe
+# add-on. Because Assistant is overwritten with the published version (because
+# Assistant is a dependency of Aljibe) the tested version of Assistant is copied
+# over the installed one.
+#
+# Parameters:
+#   $1: test_title - title of the test being prepared
+prepare_test() {
+
+  local test_title
+  test_title="$1"
+
   set -eu -o pipefail
+
   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Installing aljibe with local aljibe assistant" >&3
+  echo "# $test_title" >&3
 
-  ddev add-on get metadrop/ddev-aljibe
-
-  # Overwrite assistant with local version
-  ddev add-on get ${DIR}
-
-  ddev restart >/dev/null
-
-  check_assistant_run_auto_mode
-}
-
-
-# Test Drupal 10 installation using flag
-@test "auto mode with Drupal 10" {
-  set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# Testing auto mode with Drupal 10 flag" >&3
 
   ddev add-on get metadrop/ddev-aljibe
   ddev add-on get ${DIR}
   ddev restart >/dev/null
+}
 
-  # Use --core flag to install Drupal 10
-  ddev aljibe-assistant --auto --core 10 >&3
+
+# Checks if git is initialised.
+#
+# It checks for .git/config because Aljibe adds git hooks, so .git folder will
+# always be present.
+is_git_initialised() {
+  if [ -d ".git" ] && [ -f ".git/config" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+check_git_is_initialised() {
+  run is_git_initialised
   assert_success
+}
+
+check_git_is_no_initialised() {
+  run is_git_initialised
+  assert_failure
+}
+
+
+check_extensions_installed() {
+  local extensions_list
+  extensions_list=("$@")
+
+  echo "Installed extensions!" >&3
+  ddev add-on list --installed >&3
+
+
+  for extension in "${extensions_list[@]}"; do
+    # We grep using "│ " to filter the ADD-ON first column and to avoid partial
+    # matches.
+    echo "# Checking if extension $extension is installed (${extension//ddev-/})" >&3
+    run bats_pipe ddev add-on list --installed \| grep "│ ${extension//ddev-/} " -c
+    assert_output "1"
+  done
+}
+
+# Checks Drupal is installed and the version matches expected.
+#
+# Parameters:
+#   $1: expected_version - expected Drupal major version (e.g., 10 or 11)
+check_drupal_version() {
+  local expected_version="$1"
 
   # Verify Drupal was installed
   run ddev drush status --field=bootstrap
   assert_output "Successful"
 
-  # Verify it's Drupal 10
+  # Verify version
   run ddev drush status --field=drupal-version
-  assert_output --regexp "^10\."
+  assert_output --regexp "^${expected_version}\."
 }
 
-# # Test without git initialization using flag
-# @test "auto mode without git initialization" {
-#   set -eu -o pipefail
-#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-#   echo "# Testing auto mode with --git flag to skip git repo" >&3
 
-#   ddev add-on get metadrop/ddev-aljibe
-#   ddev add-on get ${DIR}
-#   ddev restart >/dev/null
+@test "install from directory" {
+  prepare_test "Installing aljibe with local aljibe assistant"
 
-#   # Use --git flag to skip git initialization
-#   ddev aljibe-assistant --auto --git >&3
-#   assert_success
+  run ddev aljibe-assistant --auto >&3
+  assert_success
 
-#   # Verify no git repo was created
-#   run test -d .git
-#   assert_failure
-# }
+  check_drupal_version 11
+  check_git_is_initialised
+}
 
-# # Test without Drupal installation using flag
-# @test "auto mode without Drupal installation" {
-#   set -eu -o pipefail
-#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-#   echo "# Testing auto mode with --install flag to skip Drupal" >&3
 
-#   ddev add-on get metadrop/ddev-aljibe
-#   ddev add-on get ${DIR}
-#   ddev restart >/dev/null
+@test "interactive mode with all defaults" {
 
-#   # Use --install flag to skip Drupal installation
-#   ddev aljibe-assistant --auto --install >&3
-#   assert_success
+  prepare_test "Running interactive mode with default values (pressing Enter)"
 
-#   # Verify Drupal was NOT installed (bootstrap should not be successful)
-#   run ddev drush status --field=bootstrap 2>&1
-#   refute_output "Successful"
-# }
+  # Simulate pressing Enter for all prompts (accept defaults)
+  yes "" | timeout 300 ddev aljibe-assistant --testing >&3 || true
 
-# # Test with specific install profile using flag
-# @test "auto mode with specific install profile" {
-#   set -eu -o pipefail
-#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-#   echo "# Testing auto mode with --profile flag" >&3
+  check_drupal_version 11
+  check_git_is_initialised
+}
 
-#   ddev add-on get metadrop/ddev-aljibe
-#   ddev add-on get ${DIR}
-#   ddev restart >/dev/null
 
-#   # Use --profile flag to install standard profile instead of minimal
-#   ddev aljibe-assistant --auto --profile standard >&3
-#   assert_success
+@test "auto mode with Drupal 10" {
 
-#   # Verify Drupal was installed successfully
-#   run ddev drush status --field=bootstrap
-#   assert_output "Successful"
-# }
+  prepare_test "Testing auto mode with Drupal 10 flag"
 
-# # Test with Artisan theme installation using flag
-# @test "auto mode with Artisan theme" {
-#   set -eu -o pipefail
-#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-#   echo "# Testing auto mode with --theme flag" >&3
+  # Use --core flag to install Drupal 10
+  run ddev aljibe-assistant --auto --core 10 >&3
+  assert_success
 
-#   ddev add-on get metadrop/ddev-aljibe
-#   ddev add-on get ${DIR}
-#   ddev restart >/dev/null
+  check_drupal_version 10
+  check_git_is_initialised
+}
 
-#   # Use --theme flag to install Artisan theme
-#   ddev aljibe-assistant --auto --theme >&3
-#   assert_success
 
-#   # Verify Drupal was installed successfully
-#   run ddev drush status --field=bootstrap
-#   assert_output "Successful"
+@test "auto mode without git initialisation" {
+  prepare_test "Testing without initialising git repository flag"
 
-#   # Check if Artisan theme was installed
-#   run ddev composer show drupal/artisan
-#   assert_success
-# }
+  # Use --git flag to skip git initialization
+  ddev aljibe-assistant --auto --git >&3
+  assert_success
 
-# # Test combining multiple flags
-# @test "auto mode with multiple custom flags" {
-#   set -eu -o pipefail
-#   cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-#   echo "# Testing auto mode with multiple flags combined" >&3
+  check_drupal_version 11
+  check_git_is_no_initialised
+}
 
-#   ddev add-on get metadrop/ddev-aljibe
-#   ddev add-on get ${DIR}
-#   ddev restart >/dev/null
 
-#   # Combine multiple flags: custom name, Drupal 10, standard profile, no git
-#   ddev aljibe-assistant --auto --name "multi-flag-test" --core 10 --profile standard --git >&3
-#   assert_success
+@test "auto mode without installing Drupal" {
 
-#   # Verify Drupal 10 was installed
-#   run ddev drush status --field=bootstrap
-#   assert_output "Successful"
+  prepare_test "Testing auto mode with --install flag to skip Drupal installation"
 
-#   run ddev drush status --field=drupal-version
-#   assert_output --regexp "^10\."
+  # Use --install flag to skip Drupal installation
+  ddev aljibe-assistant --auto --install >&3
+  assert_success
 
-#   # Verify no git repo
-#   run test -d .git
-#   assert_failure
-# }
+  # Verify Drupal was NOT installed (bootstrap should not be successful)
+  run ddev drush status --field=bootstrap 2>&1
+  refute_output "Successful"
+}
+
+@test "auto mode without any add-ons" {
+
+  prepare_test "Testing auto mode with no extensions"
+
+  ddev aljibe-assistant --auto --extensions NONE >&3
+  assert_success
+
+  check_drupal_version 11
+  check_git_is_initialised
+  check_extensions_installed
+}
+
+@test "auto mode with selected add-ons" {
+
+  prepare_test "Testing auto mode with selected extensions"
+
+  ddev aljibe-assistant --auto --extensions Metadrop/ddev-backstopjs,ddev/ddev-adminer >&3
+  assert_success
+
+  check_drupal_version 11
+  check_git_is_initialised
+  check_extensions_installed backstopjs adminer
+}
+
+
+@test "auto mode with specific install profile" {
+
+  prepare_test "Testing auto mode with --profile flag"
+
+  ddev aljibe-assistant --auto --profile demo_umami >&3
+  assert_success
+
+  check_drupal_version 11
+  check_git_is_initialised
+}
+
+
+@test "auto mode with Artisan theme" {
+
+  prepare_test "Testing auto mode with --theme flag"
+
+  ddev aljibe-assistant --auto --theme >&3
+  assert_success
+
+  check_drupal_version 11
+  check_git_is_initialised
+
+  # Check if Artisan theme was installed
+  run ddev composer show drupal/artisan
+  assert_success
+}

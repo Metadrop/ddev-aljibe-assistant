@@ -58,8 +58,13 @@ parse_arguments() {
         shift 2
         ;;
       -e|--extensions)
-        PROVIDED_ALJIBE_EXTENSIONS=$2
-        echo "Extensions to install: $PROVIDED_ALJIBE_EXTENSIONS"
+        if [[ "$2" == "NONE" ]]; then
+          PROVIDED_ALJIBE_EXTENSIONS=[]
+          echo "Extensions to install: none"
+        else
+          PROVIDED_ALJIBE_EXTENSIONS="$2"
+          echo "Extensions to install: $PROVIDED_ALJIBE_EXTENSIONS"
+        fi
         shift 2
         ;;
       -g|--git)
@@ -83,7 +88,6 @@ parse_arguments() {
         shift 2
         ;;
       --testing)
-        # Undocumented flag for testing purposes.
         TESTING_MODE=1
         echo "Enabling testing mode"
         shift 1
@@ -96,6 +100,7 @@ parse_arguments() {
   done
 }
 
+
 # Create project.
 #
 # This function is called from the main script to create a new project.
@@ -104,7 +109,6 @@ create_project() {
 
   # Parse command line arguments if provided
   parse_arguments "$@"
-
 
 
   configure_project
@@ -243,8 +247,28 @@ aljibe_extensions_setup() {
     else
       result=("${preselection[@]}")
     fi
-  fi
+  else
+    # Convert provided extensions into a result array to behave like the user
+    # selected them.
+    IFS=',' read -r -a provided_extensions_array <<< "$PROVIDED_ALJIBE_EXTENSIONS"
 
+    # shellcheck disable=SC2034
+    local result=()
+    for extension in "${available_aljibe_extensions[@]}"; do
+      local found=false
+      for provided_extension in "${provided_extensions_array[@]}"; do
+        if [ "$extension" == "$provided_extension" ]; then
+          found=true
+          break
+        fi
+      done
+      if [ "$found" == "true" ]; then
+        result+=("true")
+      else
+        result+=("false")
+      fi
+    done
+  fi
 
   for i in "${!available_aljibe_extensions[@]}"; do
     local current="${available_aljibe_extensions[i]}"
@@ -269,7 +293,7 @@ aljibe_extensions_setup() {
 #
 # Starts the DDEV container for the project.
 ddev_start() {
-  ddev start
+  ddev start -y
 }
 
 # Install Composer dependencies.
@@ -310,7 +334,7 @@ drupal_install() {
       if [ "$AUTO" == "0" ]; then
         AVAILABLE_PROFILES=("Minimal" "Standard" "Umami demo")
 
-        while [ -z "$INSTALL_PROFILE" ]; do
+        while [ -z "$INSTALL_PROFILE" ] && [ "$TESTING_MODE" != "1" ]; do
           display_question "What install profile you want to install ('Minimal' is recommended for development)?"
           echo ""
           select PROFILE in "${AVAILABLE_PROFILES[@]}"; do
