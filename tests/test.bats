@@ -142,7 +142,6 @@ check_drupal_version() {
   check_git_is_initialised
 }
 
-
 @test "interactive mode with all defaults" {
 
   prepare_test "Running interactive mode with default values (pressing Enter)"
