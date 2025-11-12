@@ -102,7 +102,6 @@ check_extensions_installed() {
   local extensions_list
   extensions_list=("$@")
 
-  echo "Installed extensions!" >&3
   ddev add-on list --installed >&3
 
 
