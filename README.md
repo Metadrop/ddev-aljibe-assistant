@@ -3,6 +3,8 @@
 
 ## Aljibe assistant
 
-Aljibe-assistant is an addon to add an interactive install process for a Drupal project based on Aljibe.
+Aljibe-assistant is an addon to add an interactive setup process for a Drupal project based on Aljibe.
+
+It allows to select which ALjibe extensions to use (DDEV addons), which version of Drupal to install, provide a base theme, etc.
 
 Visit **[Aljibe ddev addon](https://github.com/Metadrop/ddev-aljibe)** to know more about Aljibe.
