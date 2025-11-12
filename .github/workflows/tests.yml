@@ -60,3 +60,5 @@ jobs:
           debug_enabled: ${{ inputs.debug_enabled }}
           addon_repository: ${{ github.repository }}
           addon_ref: ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
