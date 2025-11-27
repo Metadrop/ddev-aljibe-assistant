@@ -121,7 +121,7 @@ create_project() {
   backstopjs_setup
   grumphp_setup
   phpunit_setup
-  artefact_generator_setup
+  artifact_generator_setup
   create_subtheme
   add_custom_themes_to_aljibe
 }
@@ -226,11 +226,11 @@ aljibe_extensions_setup() {
 
   # shellcheck disable=SC2034
   local available_aljibe_extensions
-  available_aljibe_extensions=(   "ddev/ddev-adminer"  "Metadrop/ddev-mkdocs"  "Metadrop/ddev-selenium"  "Metadrop/ddev-backstopjs"  "Metadrop/ddev-pa11y"  "Metadrop/ddev-unlighthouse"  "Metadrop/ddev-newman"  )
+  available_aljibe_extensions=(   "ddev/ddev-adminer"  "Metadrop/ddev-mkdocs"  "Metadrop/ddev-selenium"  "Metadrop/ddev-backstopjs"  "Metadrop/ddev-pa11y"  "Metadrop/ddev-unlighthouse"  "Metadrop/ddev-newman"  "Metadrop/ddev-yellowlabtools"  )
 
   local preselection
   # shellcheck disable=SC2034
-  preselection=( "true"      "true"      "true"      "true"      "true"      "true"   "true" )
+  preselection=( "true"  "true"  "true"  "true"  "true"  "true"  "true"  "true"  )
 
   if [ -z "$PROVIDED_ALJIBE_EXTENSIONS" ]; then
     # If testing mode is enabled act like in auto mode because we cannot
@@ -241,7 +241,7 @@ aljibe_extensions_setup() {
 
       local available_aljibe_extension_labels
       # shellcheck disable=SC2034
-      available_aljibe_extension_labels=(   "Adminer (Database web interface)"  "MkDocs (Documentation)"   "Behat (Acceptance tests)"  "BackstopJS (Visual regression testing)"  "Pa11y (Accessibility checker)"  "Unlighthouse (Quality, performance and correctness testing)"  "Newman (API testing)"  )
+      available_aljibe_extension_labels=(   "Adminer (Database web interface)"  "MkDocs (Documentation)"   "Behat (Acceptance tests)"  "BackstopJS (Visual regression testing)"  "Pa11y (Accessibility checker)"  "Unlighthouse (Quality, performance and correctness testing)"  "Newman (API testing)"  "Yellowlabs Tools (Performance and front-end quality issues analyzer)"  )
 
       multiselect result available_aljibe_extensions available_aljibe_extension_labels preselection
     else
@@ -396,8 +396,8 @@ backstopjs_setup() {
 #
 # Copies the Drupal artifact builder configuration file template to the project
 # root for deployment artifact generation.
-artefact_generator_setup() {
-  echo "Setting up artefact generator configuration file"
+artifact_generator_setup() {
+  echo "Setting up artifact generator configuration file"
   cp ${DDEV_APPROOT}/vendor/metadrop/drupal-artifact-builder/.drupal-artifact-builder.yml.dist ${DDEV_APPROOT}/.drupal-artifact-builder.yml
 }
 
