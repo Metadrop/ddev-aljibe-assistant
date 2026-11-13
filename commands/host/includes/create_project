@@ -14,7 +14,6 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "${SCRIPT_DIR}/aljibe_includes"
 
 
 # Default values for options
@@ -632,3 +631,5 @@ function multiselect {
 
     eval $return_value='("${selected[@]}")'
 }
+
+source "${SCRIPT_DIR}/aljibe_includes"
