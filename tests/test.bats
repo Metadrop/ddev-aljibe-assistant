@@ -239,7 +239,7 @@ check_drupal_version() {
 
   prepare_test "Testing auto mode with --theme flag"
 
-  ddev aljibe-assistant --auto --theme >&3
+  run ddev aljibe-assistant --auto --theme
   assert_success
 
   check_drupal_version 11
@@ -248,6 +248,11 @@ check_drupal_version() {
   # Check if Artisan theme was installed
   run ddev composer show drupal/artisan
   assert_success
+
+  # Check the subtheme was generated and set as the default theme
+  assert_dir_exists "${TESTDIR}/web/themes/custom/artisan_subtheme"
+  run ddev drush config:get system.theme default --format=string
+  assert_output "artisan_subtheme"
 }
 
 @test "auto mode stops and fails when a step fails" {

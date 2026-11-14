@@ -7,7 +7,6 @@
 DRUSH_ALIASES_FOLDER="./drush/sites"
 BEHAT_LOCAL_FOLDER="./tests/behat/local"
 INSTALL_DRUPAL_10="n"
-ARTISAN_AUTO_INSTALL_PARAM=""
 PHP_VERSION="8.3"
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
@@ -468,13 +467,32 @@ create_subtheme() {
   if [ "$INSTALL_ARTISAN_SUBTHEME" == "1" ]; then
     echo "Installing Artisan theme dependency"
     ddev composer require drupal/artisan
-    echo "Creating Artisan subtheme"
 
-    if [ "$AUTO" == "1" ]; then
-      ARTISAN_AUTO_INSTALL_PARAM="-y"
+    local artisan_command=(drush --include="web/themes/contrib/artisan" artisan:create)
+
+    # The subtheme is installed and set as default, which needs a Drupal site.
+    if [ "$INSTALL_DRUPAL" != "1" ]; then
+      echo "Drupal is not installed, skipping Artisan subtheme creation."
+      echo "Once Drupal is installed, create it with: ddev ${artisan_command[*]}"
+      return
     fi
 
-    echo ddev drush --include="web/themes/contrib/artisan" artisan:subtheme:create "$ARTISAN_AUTO_INSTALL_PARAM"
+    echo "Creating Artisan subtheme"
+    if [ "$AUTO" == "1" ]; then
+      artisan_command+=(-y)
+    fi
+    ddev "${artisan_command[@]}"
+
+    # artisan:create logs errors but always exits 0, so check the result. In
+    # interactive mode the user may have declined, so only warn there.
+    if [ -z "$(find web/themes/custom -mindepth 1 -maxdepth 1 -type d 2>/dev/null)" ]; then
+      if [ "$AUTO" == "1" ]; then
+        echo "Error: the Artisan subtheme was not created in web/themes/custom." >&2
+        return 1
+      fi
+      echo "No Artisan subtheme was created."
+      return
+    fi
     echo "Artisan subtheme created"
   fi
 }
