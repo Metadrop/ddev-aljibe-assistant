@@ -83,9 +83,6 @@ prepare_test() {
 
 
 # Checks if git is initialised.
-#
-# It checks for .git/config because Aljibe adds git hooks, so .git folder will
-# always be present.
 is_git_initialised() {
   if [ -d ".git" ] && [ -f ".git/config" ]; then
     return 0
@@ -197,11 +194,14 @@ check_drupal_version() {
   prepare_test "Testing without initialising git repository flag"
 
   # Use --git flag to skip git initialization
-  ddev aljibe-assistant --auto --git >&3
+  run ddev aljibe-assistant --auto --git
   assert_success
 
   check_drupal_version 11
   check_git_is_no_initialised
+
+  # GrumPHP hooks setup is skipped, so no stray .git folder is created.
+  assert_dir_not_exists "${TESTDIR}/.git"
 }
 
 

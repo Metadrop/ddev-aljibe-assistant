@@ -333,8 +333,20 @@ composer_install() {
 
 # Setup GrumPHP.
 #
-# Initializes GrumPHP git hooks for code quality checks on commits.
+# Initializes GrumPHP git hooks for code quality checks on commits. Skipped
+# when the project is not a git repository. In that case GrumPHP's Composer
+# plugin has already run git:init during composer install, creating a stray
+# .git/hooks folder, so remove it (and .git, only if it is then empty).
 grumphp_setup() {
+  if ! git -C "${DDEV_APPROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Not a git repository, skipping GrumPHP git hooks setup."
+    echo "Once the repository is initialized, set them up with: ddev exec grumphp git:init"
+    if [ -d "${DDEV_APPROOT}/.git/hooks" ]; then
+      rm -rf "${DDEV_APPROOT}/.git/hooks"
+      rmdir "${DDEV_APPROOT}/.git" 2>/dev/null || true
+    fi
+    return
+  fi
   ddev exec grumphp git:init
 }
 

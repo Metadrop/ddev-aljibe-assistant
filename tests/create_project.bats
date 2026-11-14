@@ -11,6 +11,7 @@ setup() {
   export BATS_LIB_PATH="${BATS_LIB_PATH}:${TEST_BREW_PREFIX}/lib:/usr/lib/bats"
   bats_load_library bats-assert
   bats_load_library bats-support
+  bats_load_library bats-file
 
   # shellcheck disable=SC2155
   export DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." >/dev/null 2>&1 && pwd)"
@@ -131,4 +132,57 @@ check_os_custom_sed() {
 @test "os_custom_sed edits in place without leaving backups (BSD sed)" {
   fake_bsd_sed
   check_os_custom_sed
+}
+
+# Runs grumphp_setup in a temporary project with a ddev stub that logs calls.
+run_grumphp_setup() {
+  local stub_dir="${BATS_TEST_TMPDIR}/bin"
+  mkdir -p "${stub_dir}"
+  export DDEV_CALLS_LOG="${BATS_TEST_TMPDIR}/ddev-calls.log"
+  : > "${DDEV_CALLS_LOG}"
+  printf '#!/bin/bash\necho "$*" >> "${DDEV_CALLS_LOG}"\n' > "${stub_dir}/ddev"
+  chmod +x "${stub_dir}/ddev"
+
+  # shellcheck disable=SC2016
+  PATH="${stub_dir}:${PATH}" GIT_CEILING_DIRECTORIES="${BATS_TEST_TMPDIR}" run bash -c '
+    source "${INCLUDES_DIR}/create_project"
+    grumphp_setup
+  '
+}
+
+@test "grumphp_setup sets up hooks in a git repository" {
+  export DDEV_APPROOT="${BATS_TEST_TMPDIR}/project"
+  mkdir -p "${DDEV_APPROOT}"
+  git -C "${DDEV_APPROOT}" init -q
+
+  run_grumphp_setup
+  assert_success
+
+  run cat "${DDEV_CALLS_LOG}"
+  assert_output "exec grumphp git:init"
+}
+
+@test "grumphp_setup removes the hooks folder left by GrumPHP outside a git repository" {
+  export DDEV_APPROOT="${BATS_TEST_TMPDIR}/project"
+  mkdir -p "${DDEV_APPROOT}/.git/hooks"
+  touch "${DDEV_APPROOT}/.git/hooks/pre-commit"
+
+  run_grumphp_setup
+  assert_success
+  assert_output --partial "Not a git repository"
+  assert_dir_not_exists "${DDEV_APPROOT}/.git"
+
+  run cat "${DDEV_CALLS_LOG}"
+  assert_output ""
+}
+
+@test "grumphp_setup keeps other .git contents outside a git repository" {
+  export DDEV_APPROOT="${BATS_TEST_TMPDIR}/project"
+  mkdir -p "${DDEV_APPROOT}/.git/hooks"
+  touch "${DDEV_APPROOT}/.git/something-else"
+
+  run_grumphp_setup
+  assert_success
+  assert_dir_not_exists "${DDEV_APPROOT}/.git/hooks"
+  assert_file_exists "${DDEV_APPROOT}/.git/something-else"
 }
