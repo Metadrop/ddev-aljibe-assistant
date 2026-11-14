@@ -118,6 +118,18 @@ check_extensions_installed() {
   done
 }
 
+# Checks the given extensions are not installed.
+#
+# Parameters:
+#   $@: extension names, with or without the "ddev-" prefix.
+check_extensions_not_installed() {
+  local extension
+  for extension in "$@"; do
+    run bats_pipe ddev add-on list --installed \| grep -c "│ ${extension//ddev-/} "
+    assert_output "0"
+  done
+}
+
 # Checks Drupal is installed and the version matches expected.
 #
 # Parameters:
@@ -222,24 +234,25 @@ check_drupal_version() {
 
   prepare_test "Testing auto mode with no extensions"
 
-  ddev aljibe-assistant --auto --extensions NONE >&3
+  run ddev aljibe-assistant --auto --extensions NONE
   assert_success
 
   check_drupal_version 11
   check_git_is_initialised
-  check_extensions_installed
+  check_extensions_not_installed adminer mkdocs selenium backstopjs pa11y unlighthouse newman yellowlabtools
 }
 
 @test "auto mode with selected add-ons" {
 
   prepare_test "Testing auto mode with selected extensions"
 
-  ddev aljibe-assistant --auto --extensions Metadrop/ddev-backstopjs,ddev/ddev-adminer >&3
+  run ddev aljibe-assistant --auto --extensions Metadrop/ddev-backstopjs,ddev/ddev-adminer
   assert_success
 
   check_drupal_version 11
   check_git_is_initialised
   check_extensions_installed backstopjs adminer
+  check_extensions_not_installed mkdocs selenium pa11y unlighthouse newman yellowlabtools
 }
 
 

@@ -304,6 +304,13 @@ aljibe_extensions_setup() {
     done
   fi
 
+  # Aljibe installs most extensions by default, so deselected ones must be
+  # removed. Use the JSON output: the table truncates repositories, and they
+  # may be recorded with a different case or as a local path. Match the exact
+  # add-on name, which is the repository name without the "ddev-" prefix.
+  local installed_addons
+  installed_addons=$(ddev add-on list --installed -j 2>/dev/null)
+
   for i in "${!available_aljibe_extensions[@]}"; do
     local current="${available_aljibe_extensions[i]}"
     # shellcheck disable=SC2154
@@ -311,14 +318,13 @@ aljibe_extensions_setup() {
       echo "Installing $current"
       ddev add-on get "$current"
     else
-      local item_installed
-      local item_name
-      item_name=$(basename "$current")
-      item_installed=$(ddev add-on list --installed | grep -ic "$item_name" || true)
+      local addon_name
+      addon_name=$(basename "$current")
+      addon_name=${addon_name#ddev-}
 
-      if [ "$item_installed" -ne 0 ]; then
+      if [[ "$installed_addons" == *"\"Name\":\"${addon_name}\""* ]]; then
         echo "Removing $current"
-        ddev add-on remove "$current"
+        ddev add-on remove "$addon_name"
       fi
     fi
   done

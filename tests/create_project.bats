@@ -188,13 +188,27 @@ run_grumphp_setup() {
 }
 
 # Runs aljibe_extensions_setup with the given --extensions value, using a ddev
-# stub that logs calls and reports no installed add-ons.
+# stub that logs calls. 'ddev add-on list --installed -j' reports the add-ons
+# named in INSTALLED_ADDONS (space separated), in DDEV's JSON format.
 run_extensions_setup() {
   local stub_dir="${BATS_TEST_TMPDIR}/bin"
   mkdir -p "${stub_dir}"
   export DDEV_CALLS_LOG="${BATS_TEST_TMPDIR}/ddev-calls.log"
   : > "${DDEV_CALLS_LOG}"
-  printf '#!/bin/bash\necho "$*" >> "${DDEV_CALLS_LOG}"\n' > "${stub_dir}/ddev"
+
+  local raw="" name
+  for name in ${INSTALLED_ADDONS:-}; do
+    raw+="${raw:+,}{\"Name\":\"${name}\",\"Repository\":\"metadrop/ddev-${name}\",\"Version\":\"v1.0.0\"}"
+  done
+  echo "{\"level\":\"info\",\"msg\":\"table\",\"raw\":[${raw}],\"time\":\"now\"}" > "${BATS_TEST_TMPDIR}/installed.json"
+
+  cat > "${stub_dir}/ddev" <<'STUB'
+#!/bin/bash
+echo "$*" >> "${DDEV_CALLS_LOG}"
+if [ "$*" = "add-on list --installed -j" ]; then
+  cat "${BATS_TEST_TMPDIR}/installed.json"
+fi
+STUB
   chmod +x "${stub_dir}/ddev"
 
   # shellcheck disable=SC2016
@@ -257,4 +271,25 @@ add-on get Metadrop/ddev-newman"
   assert_success
   assert_line "result=false true true"
   refute_output --partial "leaked"
+}
+
+@test "deselected extensions that are installed are removed by add-on name" {
+  # selenium, backstopjs and unlighthouse have repository names that the
+  # 'ddev add-on list' table truncates.
+  INSTALLED_ADDONS="selenium backstopjs unlighthouse mkdocs aljibe" run_extensions_setup "ddev/ddev-adminer"
+  assert_success
+
+  run grep "^add-on remove" "${DDEV_CALLS_LOG}"
+  assert_output "add-on remove mkdocs
+add-on remove selenium
+add-on remove backstopjs
+add-on remove unlighthouse"
+}
+
+@test "deselected extensions are not matched by a longer add-on name" {
+  INSTALLED_ADDONS="selenium-video" run_extensions_setup NONE
+  assert_success
+
+  run grep -c "^add-on remove" "${DDEV_CALLS_LOG}"
+  assert_output "0"
 }
