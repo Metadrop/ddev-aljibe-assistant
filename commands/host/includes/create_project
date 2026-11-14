@@ -567,21 +567,18 @@ add_custom_themes_to_aljibe() {
   done
 }
 
-# Cross-platform sed wrapper.
+# Cross-platform in-place sed.
 #
-# Provides consistent sed -i behavior across macOS and Linux. macOS sed requires
-# a backup extension parameter while Linux sed does not.
+# GNU sed (Linux) and BSD sed (macOS) disagree on "-i" without a suffix, but
+# both accept a suffix attached to it ("-i.bak"). Use that and remove the
+# backup, so no stray files are left in the project.
 #
 # Arguments:
-#   $@: All arguments are passed to sed command
-os_custom_sed () {
-    if [ "$DETECTED_SO" = "mac" ]; then
-        # MacOS sed requires a backup extension, so we use 'bak' as a placeholder
-        sed -i bak "$@"
-    else
-        # Linux sed supports -i without a backup extension
-        sed -i "$@"
-    fi
+#   $@: sed arguments; the last one must be the file to edit.
+os_custom_sed() {
+  local file="${*: -1}"
+  sed -i.bak "$@"
+  rm -f "${file}.bak"
 }
 
 

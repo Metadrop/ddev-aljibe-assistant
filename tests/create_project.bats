@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
 
-# Command line argument parsing tests.
+# Unit tests for functions in commands/host/includes/create_project.
 #
-# These tests only exercise parse_arguments() from create_project, so they do
-# not need DDEV and run in seconds.
+# These tests call the functions directly, so they do not need DDEV and run in
+# seconds.
 
 setup() {
   set -eu -o pipefail
@@ -73,4 +73,55 @@ parse() {
   parse --does-not-exist
   assert_equal "$status" 1
   assert_output --partial "Error: Unknown option --does-not-exist"
+}
+
+# Puts a sed that follows BSD (macOS) rules for -i first in PATH: "-i EXT"
+# takes the next argument as the backup suffix and "-iEXT" an attached one.
+# It then runs GNU sed with the equivalent options.
+fake_bsd_sed() {
+  local stub_dir="${BATS_TEST_TMPDIR}/bin"
+  mkdir -p "${stub_dir}"
+  cat > "${stub_dir}/sed" <<EOF
+#!/bin/bash
+if [ "\$1" = "-i" ]; then
+  suffix="\$2"
+  shift 2
+elif [[ "\$1" == -i* ]]; then
+  suffix="\${1#-i}"
+  shift
+fi
+exec $(command -v sed) "-i\${suffix}" "\$@"
+EOF
+  chmod +x "${stub_dir}/sed"
+  export PATH="${stub_dir}:${PATH}"
+}
+
+# Runs os_custom_sed on a file in an empty folder and checks the result.
+check_os_custom_sed() {
+  local work_dir="${BATS_TEST_TMPDIR}/work"
+  mkdir -p "${work_dir}"
+  echo "default_site: self" > "${work_dir}/aljibe.yaml"
+
+  # shellcheck disable=SC2016
+  run bash -c '
+    source "${INCLUDES_DIR}/create_project"
+    os_custom_sed "s/self/myproject/g" "$1"
+  ' _ "${work_dir}/aljibe.yaml"
+  assert_success
+
+  run cat "${work_dir}/aljibe.yaml"
+  assert_output "default_site: myproject"
+
+  # No backup or other stray files are left next to the edited file.
+  run ls -A "${work_dir}"
+  assert_output "aljibe.yaml"
+}
+
+@test "os_custom_sed edits in place without leaving backups (GNU sed)" {
+  check_os_custom_sed
+}
+
+@test "os_custom_sed edits in place without leaving backups (BSD sed)" {
+  fake_bsd_sed
+  check_os_custom_sed
 }
