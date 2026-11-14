@@ -61,7 +61,7 @@ parse() {
 @test "short options with values are parsed" {
   parse -a -n myproject -c 11 -p minimal -e NONE
   assert_success
-  assert_output --partial "name=[myproject] core=[11] profile=[minimal] extensions=[[]] auto=[1]"
+  assert_output --partial "name=[myproject] core=[11] profile=[minimal] extensions=[NONE] auto=[1]"
 }
 
 @test "flags that skip a step say so" {
@@ -185,4 +185,50 @@ run_grumphp_setup() {
   assert_success
   assert_dir_not_exists "${DDEV_APPROOT}/.git/hooks"
   assert_file_exists "${DDEV_APPROOT}/.git/something-else"
+}
+
+# Runs aljibe_extensions_setup with the given --extensions value, using a ddev
+# stub that logs calls and reports no installed add-ons.
+run_extensions_setup() {
+  local stub_dir="${BATS_TEST_TMPDIR}/bin"
+  mkdir -p "${stub_dir}"
+  export DDEV_CALLS_LOG="${BATS_TEST_TMPDIR}/ddev-calls.log"
+  : > "${DDEV_CALLS_LOG}"
+  printf '#!/bin/bash\necho "$*" >> "${DDEV_CALLS_LOG}"\n' > "${stub_dir}/ddev"
+  chmod +x "${stub_dir}/ddev"
+
+  # shellcheck disable=SC2016
+  PATH="${stub_dir}:${PATH}" run bash -c '
+    source "${INCLUDES_DIR}/create_project"
+    AUTO=1
+    PROVIDED_ALJIBE_EXTENSIONS="$1"
+    aljibe_extensions_setup
+  ' _ "$1"
+}
+
+@test "extensions NONE installs no extension" {
+  run_extensions_setup NONE
+  assert_success
+
+  run grep -c "^add-on get" "${DDEV_CALLS_LOG}"
+  assert_output "0"
+}
+
+@test "extensions list installs only the listed extensions" {
+  run_extensions_setup "Metadrop/ddev-newman,ddev/ddev-adminer"
+  assert_success
+  refute_output --partial "Warning"
+
+  run grep "^add-on get" "${DDEV_CALLS_LOG}"
+  assert_output "add-on get ddev/ddev-adminer
+add-on get Metadrop/ddev-newman"
+}
+
+@test "extensions list warns about unknown extensions" {
+  run_extensions_setup "Metadrop/ddev-newmann,ddev/ddev-adminer"
+  assert_success
+  assert_output --partial "Warning: unknown extension 'Metadrop/ddev-newmann' ignored."
+
+  run grep "^add-on get" "${DDEV_CALLS_LOG}"
+  assert_output "add-on get ddev/ddev-adminer"
 }

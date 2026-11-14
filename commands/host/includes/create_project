@@ -70,7 +70,7 @@ parse_arguments() {
       -e|--extensions)
         require_option_value "$1" "${2:-}"
         if [[ "$2" == "NONE" ]]; then
-          PROVIDED_ALJIBE_EXTENSIONS=[]
+          PROVIDED_ALJIBE_EXTENSIONS="NONE"
           echo "Extensions to install: none"
         else
           PROVIDED_ALJIBE_EXTENSIONS="$2"
@@ -269,10 +269,22 @@ aljibe_extensions_setup() {
     else
       result=("${preselection[@]}")
     fi
+  elif [ "$PROVIDED_ALJIBE_EXTENSIONS" == "NONE" ]; then
+    # shellcheck disable=SC2034
+    local result=()
+    for extension in "${available_aljibe_extensions[@]}"; do
+      result+=("false")
+    done
   else
     # Convert provided extensions into a result array to behave like the user
     # selected them.
     IFS=',' read -r -a provided_extensions_array <<< "$PROVIDED_ALJIBE_EXTENSIONS"
+
+    for provided_extension in "${provided_extensions_array[@]}"; do
+      if [[ ! " ${available_aljibe_extensions[*]} " == *" ${provided_extension} "* ]]; then
+        echo "Warning: unknown extension '${provided_extension}' ignored. Available extensions: ${available_aljibe_extensions[*]}" >&2
+      fi
+    done
 
     # shellcheck disable=SC2034
     local result=()
