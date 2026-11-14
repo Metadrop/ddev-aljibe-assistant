@@ -232,3 +232,29 @@ add-on get Metadrop/ddev-newman"
   run grep "^add-on get" "${DDEV_CALLS_LOG}"
   assert_output "add-on get ddev/ddev-adminer"
 }
+
+# Drives multiselect through stdin: a fake terminal reply to the cursor
+# position query (row 10), then keys.
+@test "multiselect returns the selection and leaves nothing behind" {
+  # Space toggles option 1 (on to off), down arrow, space toggles option 2
+  # (off to on), Enter accepts. Option 3 keeps its default.
+  printf '\e[10;1R \e[B \n' > "${BATS_TEST_TMPDIR}/keys"
+
+  # shellcheck disable=SC2016
+  run bash -c '
+    source "${INCLUDES_DIR}/create_project"
+    options=(a b c)
+    labels=("Option A" "Option B" "Option C")
+    defaults=(true false true)
+    multiselect result options labels defaults
+    echo
+    echo "result=${result[*]}"
+    declare -F cursor_to print_options key_input >/dev/null && echo "leaked: functions"
+    [ -n "$(trap -p INT)" ] && echo "leaked: trap"
+    [ -n "${ESC+x}" ] && echo "leaked: ESC"
+    true
+  ' < "${BATS_TEST_TMPDIR}/keys"
+  assert_success
+  assert_line "result=false true true"
+  refute_output --partial "leaked"
+}

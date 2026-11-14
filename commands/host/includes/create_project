@@ -615,6 +615,7 @@ os_custom_sed() {
 function multiselect {
     # Little helpers for terminal print control and key input
     # The prefix ($2) contains escape sequences, so it is printed with %b.
+    local ESC
     ESC=$( printf "\033")
     cursor_blink_on()   { printf '%s[?25h' "$ESC"; }
     cursor_blink_off()  { printf '%s[?25l' "$ESC"; }
@@ -630,6 +631,7 @@ function multiselect {
     local -n defaults=$4
 
     local selected=()
+    local i
     for ((i=0; i<${#options[@]}; i++)); do
         if [[ ${defaults[i]} = "true" ]]; then
             selected+=("true")
@@ -674,6 +676,7 @@ function multiselect {
     print_options() {
         # print options by overwriting the last lines
         local idx=0
+        local label
         for label in "${labels[@]}"; do
             local prefix="[ ]"
             if [[ ${selected[idx]} == true ]]; then
@@ -709,6 +712,12 @@ function multiselect {
     cursor_to "$lastrow"
     printf "\n"
     cursor_blink_on
+
+    # Do not leak the Ctrl+C handler and the helper functions (bash functions
+    # are global) into the rest of the assistant.
+    trap - 2
+    unset -f cursor_blink_on cursor_blink_off cursor_to print_inactive \
+      print_active get_cursor_row key_input toggle_option print_options
 
     eval "$return_value"='("${selected[@]}")'
 }
