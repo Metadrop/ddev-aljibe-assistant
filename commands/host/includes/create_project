@@ -530,18 +530,40 @@ create_subtheme() {
 # Update aljibe.yaml with custom themes.
 #
 # Scans web/themes/custom/ directory and adds all custom themes to aljibe.yaml
-# configuration file so they can be compiled by the theme build system.
+# configuration file so they can be compiled by the theme build system. Each
+# theme is added under its own machine name, and the "custom_theme" example
+# entry is removed unless a theme with that name exists.
 add_custom_themes_to_aljibe() {
+  local custom_themes_dir="web/themes/custom"
+  local aljibe_yaml="/var/www/html/.ddev/aljibe.yaml"
 
-  if [ ! -d "web/themes/custom/" ]; then
+  if [ ! -d "$custom_themes_dir" ]; then
     return
   fi
 
+  # Only valid Drupal machine names. ddev exec runs the command through a shell
+  # in the container, so each yq command is passed as one string with the
+  # expression single-quoted; machine names need no further escaping.
+  local themes=()
+  local theme_path theme
+  while IFS= read -r -d '' theme_path; do
+    theme=$(basename "$theme_path")
+    if [[ "$theme" =~ ^[a-z0-9_]+$ ]]; then
+      themes+=("$theme")
+    fi
+  done < <(find "$custom_themes_dir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 
-  find web/themes/custom/ -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' theme_path; do
-    THEME=$(basename "$theme_path")
-    ddev exec yq -i ".theme_paths.custom_theme = \"/var/www/html/web/themes/custom/$THEME\"" /var/www/html/.ddev/aljibe.yaml
-    echo "Añadiendo $THEME a aljibe.yaml"
+  if [ ${#themes[@]} -eq 0 ]; then
+    return
+  fi
+
+  if [ ! -d "$custom_themes_dir/custom_theme" ]; then
+    ddev exec "yq -i 'del(.theme_paths.custom_theme)' $aljibe_yaml"
+  fi
+
+  for theme in "${themes[@]}"; do
+    echo "Adding $theme to aljibe.yaml"
+    ddev exec "yq -i '.theme_paths.$theme = \"/var/www/html/web/themes/custom/$theme\"' $aljibe_yaml"
   done
 }
 

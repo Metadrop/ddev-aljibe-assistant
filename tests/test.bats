@@ -273,6 +273,11 @@ check_drupal_version() {
   assert_dir_exists "${TESTDIR}/web/themes/custom/artisan_subtheme"
   run ddev drush config:get system.theme default --format=string
   assert_output "artisan_subtheme"
+
+  # Check the subtheme replaced the example theme in aljibe.yaml, so
+  # 'ddev frontend' builds it.
+  assert_file_contains "${TESTDIR}/.ddev/aljibe.yaml" "^  artisan_subtheme: /var/www/html/web/themes/custom/artisan_subtheme$"
+  assert_file_not_contains "${TESTDIR}/.ddev/aljibe.yaml" "^  custom_theme:"
 }
 
 @test "auto mode stops and fails when a step fails" {
