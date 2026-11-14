@@ -30,6 +30,17 @@ declare INSTALL_PROFILE
 declare INSTALL_ARTISAN_SUBTHEME
 
 
+# Exit with an error if an option that needs a value did not get one.
+#
+# $1: option name.
+# $2: next command line argument (the expected value), if any.
+require_option_value() {
+  if [[ -z "${2:-}" || "$2" == -* ]]; then
+    echo "Error: option $1 requires a value."
+    exit 1
+  fi
+}
+
 # Parse command line arguments.
 #
 # Processes command line flags and options to configure project creation.
@@ -41,11 +52,13 @@ parse_arguments() {
         shift
         ;;
       -n|--name)
+        require_option_value "$1" "${2:-}"
         PROJECT_NAME="$2"
         echo "Received project name: $PROJECT_NAME"
         shift 2
         ;;
       -c|--core)
+        require_option_value "$1" "${2:-}"
         if [[ "$2" == "10" || "$2" == "11" ]]; then
           echo "Received Drupal core version: $2"
           PROJECT_CORE="$2"
@@ -56,6 +69,7 @@ parse_arguments() {
         shift 2
         ;;
       -e|--extensions)
+        require_option_value "$1" "${2:-}"
         if [[ "$2" == "NONE" ]]; then
           PROVIDED_ALJIBE_EXTENSIONS=[]
           echo "Extensions to install: none"
@@ -81,6 +95,7 @@ parse_arguments() {
         shift
         ;;
       -p|--profile)
+        require_option_value "$1" "${2:-}"
         INSTALL_PROFILE="$2"
         echo "Received install profile: $INSTALL_PROFILE"
         shift 2
