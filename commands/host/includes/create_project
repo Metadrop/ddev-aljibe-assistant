@@ -160,6 +160,18 @@ display_yesno_question() {
   _question "${CYAN}$1"  "${2:-[Y/n]}"
 }
 
+# Check if an answer to a yes/no question is "yes" (y or yes, any case).
+# $1: answer.
+answer_is_yes() {
+  case "$1" in [yY] | [yY][eE][sS]) return 0 ;; *) return 1 ;; esac
+}
+
+# Check if an answer to a yes/no question is "no" (n or no, any case).
+# $1: answer.
+answer_is_no() {
+  case "$1" in [nN] | [nN][oO]) return 0 ;; *) return 1 ;; esac
+}
+
 # Determine some choices and setup several configuration files
 configure_project() {
 
@@ -181,7 +193,7 @@ configure_project() {
       display_yesno_question "By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?" "[y/N]"
       read -r INSTALL_DRUPAL_10
 
-      if [ "$INSTALL_DRUPAL_10" == "y" ] || [ "$INSTALL_DRUPAL_10" == "Y" ]; then
+      if answer_is_yes "$INSTALL_DRUPAL_10"; then
         PROJECT_CORE=10
       fi
     fi
@@ -218,7 +230,7 @@ git_setup() {
       display_yesno_question "Do you want to initialize a git repository for your new project?"
       read -r INITIALIZE_GIT
 
-      if [ "$INITIALIZE_GIT" == "n" ]; then
+      if answer_is_no "$INITIALIZE_GIT"; then
         SETUP_GIT_REPO=0
       fi
     fi
@@ -336,7 +348,7 @@ drupal_install() {
       display_yesno_question "Do you want to install Drupal?"
       read -r SHOULD_INSTALL
 
-      if [ "$SHOULD_INSTALL" == "n" ]; then
+      if answer_is_no "$SHOULD_INSTALL"; then
         INSTALL_DRUPAL=0
       fi
     fi
@@ -471,7 +483,7 @@ create_subtheme() {
       display_yesno_question "Do you want to create an Artisan subtheme?" "[y/N]"
       read -r SHOULD_INSTALL
 
-      if [ "$SHOULD_INSTALL" == "y" ] || [ "$SHOULD_INSTALL" == "Y" ]; then
+      if answer_is_yes "$SHOULD_INSTALL"; then
         INSTALL_ARTISAN_SUBTHEME=1
       fi
 
