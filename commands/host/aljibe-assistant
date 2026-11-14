@@ -1,5 +1,6 @@
 #!/bin/bash
 #ddev-generated
+# shellcheck source-path=SCRIPTDIR
 
 ## Description: Launch project creation assistant.
 ## Usage: aljibe-assistant
@@ -8,7 +9,9 @@
 
 # Include required scripts
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# shellcheck source=includes/logo
 source "${SCRIPT_DIR}/includes/logo"
+# shellcheck source=includes/create_project
 source "${SCRIPT_DIR}/includes/create_project"
 
 show_logo

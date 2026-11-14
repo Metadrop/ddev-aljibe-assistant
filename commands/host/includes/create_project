@@ -155,7 +155,7 @@ configure_project() {
   if [ -z "$PROJECT_NAME" ]; then
     if [ "$AUTO" == "0" ]; then
       display_question "Please enter the project name (default to ${DDEV_PROJECT})"
-      read PROJECT_NAME_INPUT
+      read -r PROJECT_NAME_INPUT
     fi
     PROJECT_NAME=${PROJECT_NAME_INPUT:-$DDEV_PROJECT}
   fi
@@ -165,7 +165,7 @@ configure_project() {
   if [ -z "$PROJECT_CORE" ]; then
     if [ "$AUTO" == "0" ]; then
       display_yesno_question "By default, Drupal 11 will be installed. Do you want to install Drupal 10 instead?" "[y/N]"
-      read INSTALL_DRUPAL_10
+      read -r INSTALL_DRUPAL_10
 
       if [ "$INSTALL_DRUPAL_10" == "y" ] || [ "$INSTALL_DRUPAL_10" == "Y" ]; then
         PROJECT_CORE=10
@@ -177,14 +177,14 @@ configure_project() {
   echo "Configuring DDEV environment"
 
   echo "Configuring ddev project $PROJECT_NAME"
-  ddev config --project-type=drupal$PROJECT_CORE --php-version "$PHP_VERSION" --project-name "$PROJECT_NAME" --docroot 'web' --auto
+  ddev config --project-type="drupal$PROJECT_CORE" --php-version "$PHP_VERSION" --project-name "$PROJECT_NAME" --docroot 'web' --auto
 
   echo "Preparing Aljibe config file"
   cp "${DDEV_APPROOT}/.ddev/aljibe.yaml.example" "${DDEV_APPROOT}/.ddev/aljibe.yaml"
   os_custom_sed "s/default_site\: self/default_site\: $PROJECT_NAME/g" "${DDEV_APPROOT}/.ddev/aljibe.yaml"
 
   echo "Copying Aljibe Kickstart project files"
-  ddev aljibe-kickstart --yes d$PROJECT_CORE
+  ddev aljibe-kickstart --yes "d$PROJECT_CORE"
 
   echo "Setting up Drush aliases file"
   cp "$DRUSH_ALIASES_FOLDER/sitename.site.yml.example" "$DRUSH_ALIASES_FOLDER/$PROJECT_NAME.site.yml"
@@ -202,7 +202,7 @@ git_setup() {
   if [ -z "$SETUP_GIT_REPO" ]; then
     if [ "$AUTO" == "0" ]; then
       display_yesno_question "Do you want to initialize a git repository for your new project?"
-      read  INITIALIZE_GIT
+      read -r INITIALIZE_GIT
 
       if [ "$INITIALIZE_GIT" == "n" ]; then
         SETUP_GIT_REPO=0
@@ -320,7 +320,7 @@ drupal_install() {
   if [ -z "$INSTALL_DRUPAL" ]; then
     if [ "$AUTO" == "0" ]; then
       display_yesno_question "Do you want to install Drupal?"
-      read SHOULD_INSTALL
+      read -r SHOULD_INSTALL
 
       if [ "$SHOULD_INSTALL" == "n" ]; then
         INSTALL_DRUPAL=0
@@ -455,7 +455,7 @@ create_subtheme() {
   if [ -z "$INSTALL_ARTISAN_SUBTHEME" ]; then
     if [ "$AUTO" == "0" ]; then
       display_yesno_question "Do you want to create an Artisan subtheme?" "[y/N]"
-      read SHOULD_INSTALL
+      read -r SHOULD_INSTALL
 
       if [ "$SHOULD_INSTALL" == "y" ] || [ "$SHOULD_INSTALL" == "Y" ]; then
         INSTALL_ARTISAN_SUBTHEME=1
@@ -529,19 +529,15 @@ os_custom_sed () {
 # $4: an array of default values as strings containing "true" or "false".
 function multiselect {
     # Little helpers for terminal print control and key input
-    # Disable shellcheck SC1087 because it misinterprets the escape sequences.
+    # The prefix ($2) contains escape sequences, so it is printed with %b.
     ESC=$( printf "\033")
-    # shellcheck disable=SC1087
-    cursor_blink_on()   { printf "$ESC[?25h"; }
-    # shellcheck disable=SC1087
-    cursor_blink_off()  { printf "$ESC[?25l"; }
-    # shellcheck disable=SC1087
-    cursor_to()         { printf "$ESC[$1;${2:-1}H"; }
-    print_inactive()    { printf "$2   $1 "; }
-    # shellcheck disable=SC1087,SC2034
-    print_active()      { printf "$2  $ESC[7m $1 $ESC[27m"; }
+    cursor_blink_on()   { printf '%s[?25h' "$ESC"; }
+    cursor_blink_off()  { printf '%s[?25l' "$ESC"; }
+    cursor_to()         { printf '%s[%s;%sH' "$ESC" "$1" "${2:-1}"; }
+    print_inactive()    { printf '%b   %s ' "$2" "$1"; }
+    print_active()      { printf '%b  %s[7m %s %s[27m' "$2" "$ESC" "$1" "$ESC"; }
     # shellcheck disable=SC2034
-    get_cursor_row()    { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
+    get_cursor_row()    { IFS=';' read -rsdR -p $'\E[6n' ROW COL; echo "${ROW#*[}"; }
 
     local return_value=$1
     local -n options=$2
@@ -561,7 +557,7 @@ function multiselect {
     # determine current screen position for overwriting the options
     local lastrow
     lastrow=$(get_cursor_row)
-    local startrow=$(($lastrow - ${#options[@]}))
+    local startrow=$((lastrow - ${#options[@]}))
 
     # ensure cursor and input echoing back on upon a ctrl+c during read -s
     trap "cursor_blink_on; stty echo; printf '\n'; exit" 2
@@ -599,8 +595,8 @@ function multiselect {
               prefix="[\e[38;5;46m✔\e[0m]"
             fi
 
-            cursor_to $(($startrow + $idx))
-            if [ $idx -eq $1 ]; then
+            cursor_to $((startrow + idx))
+            if [ "$idx" -eq "$1" ]; then
                 print_active "$label" "$prefix"
             else
                 print_inactive "$label" "$prefix"
@@ -614,7 +610,7 @@ function multiselect {
         print_options $active
 
         # user key control
-        case `key_input` in
+        case $(key_input) in
             space)  toggle_option $active;;
             enter)  print_options -1; break;;
             up)     ((active--));
@@ -625,11 +621,13 @@ function multiselect {
     done
 
     # cursor position back to normal
-    cursor_to $lastrow
+    cursor_to "$lastrow"
     printf "\n"
     cursor_blink_on
 
-    eval $return_value='("${selected[@]}")'
+    eval "$return_value"='("${selected[@]}")'
 }
 
+# Provided by the ddev-aljibe add-on, not part of this repository.
+# shellcheck source=/dev/null
 source "${SCRIPT_DIR}/aljibe_includes"
