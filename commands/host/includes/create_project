@@ -279,7 +279,7 @@ aljibe_extensions_setup() {
       local item_installed
       local item_name
       item_name=$(basename "$current")
-      item_installed=$(ddev add-on list --installed | grep -ic "$item_name")
+      item_installed=$(ddev add-on list --installed | grep -ic "$item_name" || true)
 
       if [ "$item_installed" -ne 0 ]; then
         echo "Removing $current"
@@ -601,7 +601,7 @@ function multiselect {
             else
                 print_inactive "$label" "$prefix"
             fi
-            ((idx++))
+            idx=$((idx + 1))
         done
     }
 
@@ -613,9 +613,9 @@ function multiselect {
         case $(key_input) in
             space)  toggle_option $active;;
             enter)  print_options -1; break;;
-            up)     ((active--));
+            up)     active=$((active - 1));
                     if [ $active -lt 0 ]; then active=$((${#options[@]} - 1)); fi;;
-            down)   ((active++));
+            down)   active=$((active + 1));
                     if [ $active -ge ${#options[@]} ]; then active=0; fi;;
         esac
     done

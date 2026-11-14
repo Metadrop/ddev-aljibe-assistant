@@ -7,6 +7,11 @@
 ## Flags: [{"Name":"auto","Shorthand":"a", "Usage":"Non-interactive automatic installation with sane defaults (Use other options to override default values)"}, {"Name": "name", "Shorthand": "n", "type": "string", "Usage": "Project name to use. By default project name provided by DDEV is used"}, {"Name": "profile", "Shorthand": "p", "type": "string", "Usage": "Drupal profile to install (only useful if a Drupal site is being installed)"}, {"Name": "extensions", "Shorthand": "e", "Usage": "List of Aljibe extensions to add, separated by commas. If no extensions should installed, use NONE"}, {"Name": "git", "Shorthand": "g", "Usage": "Do not initialize a Git repository in the project's folder (by default it is initialized)"}, {"Name": "core", "Shorthand": "c", "type": "uint", "DefValue": "11", "Usage": "Drupal core version (10 or 11) to install"}, {"Name": "install", "Shorthand": "i", "Usage": "Do not install a Drupal site after setting up the environment (by default it is installed)"}, {"Name": "theme", "Shorthand": "t", "Usage": "Install an Artisan theme an create a subtheme for the new site (by default it is not installed)"}, {"Name": "testing", "Usage": "Run in testing mode (used only for CI testing, skips some interactive prompts)"}]
 ## Example: ddev aljibe-assistant\nddev aljibe-assistant --auto --name myproject --profile standard --extensions NONE\nddev aljibe-assistant --extensions Metadrop/ddev-backstopjs,Metadrop/ddev-newman
 
+# Stop at the first failing command instead of carrying on with a broken setup,
+# and say which command failed.
+set -eE -o pipefail
+trap 'echo -e "\e[31mError: command failed with exit code $?: ${BASH_COMMAND}\e[0m" >&2' ERR
+
 # Include required scripts
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # shellcheck source=includes/logo
@@ -18,12 +23,15 @@ show_logo
 
 create_project "$@"
 
-ddev drush status
+ddev drush status || true
 ddev status
 
-BOOTSTRAP_STATUS=$(ddev drush status --field=bootstrap 2>/dev/null)
+BOOTSTRAP_STATUS=$(ddev drush status --field=bootstrap 2>/dev/null || true)
 echo "$BOOTSTRAP_STATUS"
 if [ "$BOOTSTRAP_STATUS" == "Successful" ]; then
   echo -e "\e[30;48;5;2m Aljibe is now installed, you can access your site here:\e[0m"
   ddev drush uli
+elif [ "$INSTALL_DRUPAL" == "1" ]; then
+  echo -e "\e[31mError: Drupal was expected to be installed but it does not bootstrap.\e[0m" >&2
+  exit 1
 fi

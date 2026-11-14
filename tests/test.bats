@@ -249,3 +249,15 @@ check_drupal_version() {
   run ddev composer show drupal/artisan
   assert_success
 }
+
+@test "auto mode stops and fails when a step fails" {
+  prepare_test "Testing that a failing step aborts the assistant with an error"
+
+  # A non-existent profile makes 'drush site-install' fail.
+  run ddev aljibe-assistant --auto --extensions NONE --profile does_not_exist
+  assert_failure
+  assert_output --partial "Error: command failed"
+
+  # Steps after the Drupal installation must not have run.
+  assert_file_not_exists "${TESTDIR}/phpunit.xml"
+}
