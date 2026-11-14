@@ -15,6 +15,13 @@ setup() {
   # shellcheck disable=SC2155
   export PROJNAME="test-$(basename "${GITHUB_REPO}")"
 
+  # ALJIBE_ADDON may point to a local ddev-aljibe checkout. DDEV needs an
+  # absolute path, and the cwd changes below, so resolve it now.
+  if [ -n "${ALJIBE_ADDON:-}" ] && [ -d "${ALJIBE_ADDON}" ]; then
+    # shellcheck disable=SC2155
+    export ALJIBE_ADDON="$(cd "${ALJIBE_ADDON}" && pwd)"
+  fi
+
   mkdir -p ~/tmp
   # shellcheck disable=SC2155
   export TESTDIR=$(mktemp -d ~/tmp/${PROJNAME}.XXXXXX)
@@ -69,7 +76,7 @@ prepare_test() {
   echo "# $test_title" >&3
 
 
-  ddev add-on get metadrop/ddev-aljibe
+  ddev add-on get "${ALJIBE_ADDON:-metadrop/ddev-aljibe}"
   ddev add-on get ${DIR}
   ddev restart >/dev/null
 }
