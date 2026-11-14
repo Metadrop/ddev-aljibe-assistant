@@ -63,6 +63,13 @@ parse() {
   assert_output --partial "name=[myproject] core=[11] profile=[minimal] extensions=[[]] auto=[1]"
 }
 
+@test "flags that skip a step say so" {
+  parse --install --git
+  assert_success
+  assert_output --partial "Drupal will NOT be installed"
+  assert_output --partial "Git repository will NOT be initialized"
+}
+
 @test "invalid core version fails" {
   parse --core 12
   assert_equal "$status" 1

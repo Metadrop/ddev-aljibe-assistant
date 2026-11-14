@@ -86,7 +86,7 @@ parse_arguments() {
         ;;
       -i|--install)
         INSTALL_DRUPAL=0
-        echo "Drupal will be installed"
+        echo "Drupal will NOT be installed"
         shift
         ;;
       -t|--theme)
