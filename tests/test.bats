@@ -125,6 +125,21 @@ check_extensions_installed() {
 #
 # Parameters:
 #   $1: expected_version - expected Drupal major version (e.g., 10 or 11)
+# Checks phpunit.xml points the browser output to the project's folder.
+#
+# Drupal 10 uses an environment variable with an absolute (container) path,
+# Drupal 11 an extension parameter with a path relative to phpunit.xml.
+#
+# Parameters:
+#   $1: drupal_version - Drupal major version (10 or 11)
+check_phpunit_output_directory() {
+  if [ "$1" == "10" ]; then
+    assert_file_contains "${TESTDIR}/phpunit.xml" '<env name="BROWSERTEST_OUTPUT_DIRECTORY" value="/var/www/html/web/sites/simpletest/browser_output"/>'
+  else
+    assert_file_contains "${TESTDIR}/phpunit.xml" '<parameter name="outputDirectory" value="web/sites/simpletest/browser_output"/>'
+  fi
+}
+
 check_drupal_version() {
   local expected_version="$1"
 
@@ -146,6 +161,7 @@ check_drupal_version() {
 
   check_drupal_version 11
   check_git_is_initialised
+  check_phpunit_output_directory 11
 }
 
 @test "interactive mode with all defaults" {
@@ -153,7 +169,10 @@ check_drupal_version() {
   prepare_test "Running interactive mode with default values (pressing Enter)"
 
   # Simulate pressing Enter for all prompts (accept defaults)
-  yes "" | timeout 300 ddev aljibe-assistant --testing >&3 || true
+  # The pipeline status is the assistant's, so 'yes' being killed by SIGPIPE
+  # does not count as a failure.
+  run bash -c 'yes "" | timeout 300 ddev aljibe-assistant --testing'
+  assert_success
 
   check_drupal_version 11
   check_git_is_initialised
@@ -170,6 +189,7 @@ check_drupal_version() {
 
   check_drupal_version 10
   check_git_is_initialised
+  check_phpunit_output_directory 10
 }
 
 

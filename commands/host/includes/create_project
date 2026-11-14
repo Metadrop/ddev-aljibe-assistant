@@ -437,8 +437,11 @@ phpunit_setup() {
   # to edit PHPUnit conf file with fragile sed commands (the following lines do
   # this).
 
+  # Drupal 10 sets the browser output directory with an environment variable.
+  # PHPUnit runs inside the web container, so use the container path. Drupal 11
+  # uses the "outputDirectory" parameter instead, adjusted further below.
   echo "Configuring PHPUnit output directory"
-  os_custom_sed "s|<parameter name=\"outputDirectory\" value=\"\"/>|<parameter name=\"outputDirectory\" value=\"${DDEV_APPROOT}/web/sites/default/files/simpletest/browser_output\"/>|g" "${DDEV_APPROOT}/phpunit.xml"
+  os_custom_sed "s|<env name=\"BROWSERTEST_OUTPUT_DIRECTORY\" value=\"\"/>|<env name=\"BROWSERTEST_OUTPUT_DIRECTORY\" value=\"/var/www/html/web/sites/simpletest/browser_output\"/>|g" "${DDEV_APPROOT}/phpunit.xml"
 
   # It is not clear if we need to set this. Apparently it is only required when
   # the site is not in root path of the domain. That would hard to defect here
@@ -459,7 +462,7 @@ phpunit_setup() {
   os_custom_sed "s|<env name=\"SIMPLETEST_DB\" value=\"\"/>|<env name=\"SIMPLETEST_DB\" value=\"mysql://db:db@db:3306/db\"/>|g" "${DDEV_APPROOT}/phpunit.xml"
 
   echo "Configuring tests output folder"
-  os_custom_sed "s|sites/simpletest/browser_output|web/sites/simpletest/browser_output|" "${DDEV_APPROOT}/phpunit.xml"
+  os_custom_sed "s|value=\"sites/simpletest/browser_output\"|value=\"web/sites/simpletest/browser_output\"|" "${DDEV_APPROOT}/phpunit.xml"
 
   echo "Setting up output folder"
   os_custom_sed "s/example/$PROJECT_NAME/g" "$BEHAT_LOCAL_FOLDER/behat.yml"
