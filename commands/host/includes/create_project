@@ -9,7 +9,6 @@ BEHAT_LOCAL_FOLDER="./tests/behat/local"
 INSTALL_DRUPAL_10="n"
 PHP_VERSION="8.3"
 CYAN='\033[0;36m'
-GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -91,7 +90,7 @@ parse_arguments() {
         ;;
       -t|--theme)
         INSTALL_ARTISAN_SUBTHEME=1
-        echo "Artisan theme will installed and a subtheme will be created"
+        echo "Artisan theme will be installed and a subtheme will be created"
         shift
         ;;
       -p|--profile)
@@ -118,8 +117,6 @@ parse_arguments() {
 #
 # This function is called from the main script to create a new project.
 create_project() {
-  echo -e "${GREEN}$1${NC}\n"
-
   # Parse command line arguments if provided
   parse_arguments "$@"
 
@@ -157,7 +154,7 @@ display_question() {
 # $1: Question text
 # $2: Additional prompt text (e.g., "[y/N]")
 display_yesno_question() {
-  _question "${CYAN}$1"  "${2:-[Y/n]}"
+  _question "$1" "${2:-[Y/n]}"
 }
 
 # Check if an answer to a yes/no question is "yes" (y or yes, any case).
@@ -476,9 +473,6 @@ phpunit_setup() {
   echo "Configuring tests output folder"
   os_custom_sed "s|value=\"sites/simpletest/browser_output\"|value=\"web/sites/simpletest/browser_output\"|" "${DDEV_APPROOT}/phpunit.xml"
 
-  echo "Setting up output folder"
-  os_custom_sed "s/example/$PROJECT_NAME/g" "$BEHAT_LOCAL_FOLDER/behat.yml"
-
   echo "Create tests output folder"
   mkdir "${DDEV_APPROOT}/web/sites/simpletest/browser_output" -p
   chmod 755 "${DDEV_APPROOT}/web/sites/simpletest/browser_output"
@@ -597,9 +591,9 @@ os_custom_sed() {
 
 # Present a menu to select multiple options.
 #
-# Coe adpated to have a list of lalbes and vales,instead just values that are
-# used also as values. Original code from StackOverflow user miu, that also
-# adpated code from  Denis Semenenko'adapted.
+# Code adapted to have a list of labels and values, instead of just values that
+# are also used as labels. Original code from StackOverflow user miu, who also
+# adapted code from Denis Semenenko.
 # See https://unix.stackexchange.com/a/673436/170651.
 #
 # $1: variable name where to put the result.
